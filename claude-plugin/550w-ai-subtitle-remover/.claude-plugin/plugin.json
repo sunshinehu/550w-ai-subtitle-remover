@@ -1,0 +1,8 @@
+{
+  "name": "550w-ai-subtitle-remover",
+  "version": "2.0.0",
+  "description": "Remove video subtitles and watermarks with the 550W Open API using a local Node.js skill.",
+  "author": { "name": "SunshineHu" },
+  "homepage": "https://eraser.550wai.com/api/",
+  "repository": "https://github.com/sunshinehu/550w-ai-subtitle-remover"
+}
