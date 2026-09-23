@@ -4,6 +4,8 @@ Global edition of the 550W AI media Skill, version 2.0.0. It removes hardcoded s
 
 This repository contains the installable global distribution. The Skill entry point is [`SKILL.md`](SKILL.md); see [`references/agent-compatibility.md`](references/agent-compatibility.md) for host-specific setup and [`references/api-contract.md`](references/api-contract.md) for API behavior.
 
+The [`dify/`](dify/) directory contains the source of the separate Dify tool-plugin adapter for the same 550W API. It exposes four actions and is packaged for Dify Marketplace; the standalone Skill remains the full-featured distribution.
+
 ## Setup
 
 Get a User ID and API Key for the same account from [Eraser API](https://eraser.550wai.com/api/). Set `SUBTITLE_REMOVER_USER_NO` and `SUBTITLE_REMOVER_API_KEY` in your agent's secure connector or environment settings. The global package defaults to English. No region selector is required.
