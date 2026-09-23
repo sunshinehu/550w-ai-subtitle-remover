@@ -49,4 +49,4 @@ If the host has no registered tools, send one JSON request on standard input to 
 - A timeout does not prove submission failed. Query the task first; never blindly retry a billed operation. Reuse an `idempotencyKey` only with identical subtitle inputs. Report the service's `refundStatus` on subtitle failure without assuming a refund.
 - Return the result or actionable error to the user in every case.
 
-Read [API contract](references/api-contract.md) for limits, statuses, billing formulas, and errors. Read [agent compatibility](references/agent-compatibility.md) for installation outside WorkBuddy.
+Read the bundled `references/api-contract.md` for limits, statuses, billing formulas, and errors, and `references/agent-compatibility.md` for installation outside WorkBuddy. For web readers, the same files are available as [API contract](https://github.com/sunshinehu/550w-ai-subtitle-remover/blob/main/references/api-contract.md) and [agent compatibility](https://github.com/sunshinehu/550w-ai-subtitle-remover/blob/main/references/agent-compatibility.md).
