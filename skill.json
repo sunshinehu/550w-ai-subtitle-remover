@@ -1,16 +1,15 @@
 {
   "name": "ai-subtitle-remover",
-  "version": "2.0.0",
-  "displayName": "550W AI Subtitle & Watermark Remover",
-  "displayNameEn": "550W AI Subtitle & Watermark Remover",
-  "description": "Remove hardcoded video subtitles, watermarks from TikTok and other supported short-video share links, and image watermarks or unwanted text; check tasks and credits. Copy a video share link in the app to use it.",
-  "descriptionEn": "Remove hardcoded video subtitles, watermarks from TikTok and other supported short-video share links, and image watermarks or unwanted text; check tasks and credits. Copy a video share link in the app to use it.",
+  "version": "3.1.1",
+  "displayName": "550W Watermark & Text Eraser",
+  "displayNameEn": "550W Watermark & Text Eraser",
+  "description": "Upload images to remove watermarks, upload local videos to erase subtitles or visual watermarks, or paste a TikTok, X or other supported share link to resolve a watermark-free video URL.",
+  "descriptionEn": "Upload images to remove watermarks, upload local videos to erase subtitles or visual watermarks, or paste a TikTok, X or other supported share link to resolve a watermark-free video URL.",
   "platforms": [
     "ClawHub",
     "Agent Skills"
   ],
   "agents": [
-    "WorkBuddy",
     "OpenClaw",
     "Hermes"
   ],
@@ -28,17 +27,22 @@
     "workflow"
   ],
   "credentials": {
-    "required": [
+    "required": [],
+    "requiredForOpenapi": [
       "userNo",
       "apiKey"
     ],
-    "applyUrl": "https://eraser.550wai.com/api/",
-    "applyUrlEn": "https://eraser.550wai.com/api/"
+    "applyUrl": "https://eraser.550wai.com/api/"
   },
   "distribution": {
     "region": "global",
     "locale": "en",
     "market": "ClawHub and all non-domestic Agent Skills stores",
     "credentialUrl": "https://eraser.550wai.com/api/"
-  }
+  },
+  "supportedAccess": [
+    "oauth-mcp",
+    "openapi"
+  ],
+  "preferredAccess": "oauth-mcp"
 }
