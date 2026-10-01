@@ -6,6 +6,7 @@ import { invoke } from "./dispatcher";
 import { SkillRequest, SkillResponse } from "./types";
 import { localize, resolveServiceRegion } from "./i18n";
 import { openSelectedLocalMedia } from "./local-media";
+import { requireProcessingApproval } from './processing-approval';
 
 function withLocalFile(action: SkillRequest["action"], params: Record<string, any>): Record<string, any> {
   const filePath = typeof params.filePath === "string" ? params.filePath : null;
@@ -25,6 +26,8 @@ function toolResult(result: SkillResponse) {
 }
 
 async function call(action: SkillRequest["action"], params: Record<string, any>) {
+  const approvalError = requireProcessingApproval(action, params);
+  if (approvalError) return toolResult(approvalError);
   try {
     if (action === "workflow") {
       const hasFile = typeof params.filePath === "string" && params.filePath.trim() !== "";
@@ -43,12 +46,14 @@ const locale = z.string().min(2).optional().describe("Optional BCP 47 language t
 const domestic = resolveServiceRegion() === "domestic";
 const description = (zh: string, en: string) => domestic ? zh : en;
 const localeField: Record<string, z.ZodTypeAny> = domestic ? {} : { locale };
+const confirmProcessing = z.literal(true).describe(description('仅在用户确认本次素材传输和可能扣除积分后传入 true。', 'Set true only after the user approves this media transmission and possible credit charge.'));
 const server = new McpServer({ name: "ai-subtitle-remover", version: require("../package.json").version });
 
 server.registerTool("remove_video_subtitles", {
   description: description("去除用户指定 MP4/MOV 视频中的硬字幕或画面水印；默认整帧擦除，仅在用户给出矩形坐标时按区域擦除。所选文件或直链会发送至 550W Open API 并计费。", "Erase hardcoded subtitles or visual watermarks from a selected MP4/MOV video. Full-frame by default; use a rectangle only when supplied by the user. The file or direct URL is sent to the billed 550W Open API."),
   inputSchema: {
     filePath: z.string().optional().describe(description("本地 MP4 或 MOV 文件的绝对路径。", "Absolute path to a local MP4 or MOV file.")),
+    confirmProcessing,
     videoUrl: z.string().url().optional().describe(description("MP4 或 MOV 文件的 HTTP(S) 直链。", "Direct HTTP(S) URL to an MP4 or MOV file.")),
     width: z.number().int().positive().optional().describe(description("视频真实像素宽度；与高度、时长一起提供可跳过本地检测。", "Actual pixel width; supply with height and duration to skip local ffprobe.")),
     height: z.number().int().positive().optional().describe(description("视频真实像素高度；与宽度、时长一起提供。", "Actual pixel height; supply with width and duration.")),
@@ -69,6 +74,7 @@ server.registerTool("remove_video_watermark", {
   description: description("解析从抖音、快手、Bilibili、微博等 App 或网站复制的分享链接，返回无水印视频直链；下载失败或超时则把已解析的直链交给用户在浏览器下载。成功解析扣 1 积分。", "Resolve a TikTok, X, or other supported app/site share link to a watermark-free video URL. If downloading the resolved video fails or times out, give that URL to the user to open in a browser. A successful resolution costs one credit."),
   inputSchema: {
     videoUrl: z.string().describe(description("从短视频 App 内复制的公开视频分享链接，或包含单个链接的分享文本。", "Public short-video share URL copied from the platform app, or share text containing one URL.")),
+    confirmProcessing,
     operationId: z.string().min(8).max(64).regex(/^[A-Za-z0-9._:-]+$/).optional().describe(description("建议传入稳定操作标识，以支持安全重试。", "Recommended stable operation ID for safe retries.")),
     ...localeField,
   },
@@ -79,6 +85,7 @@ server.registerTool("remove_image_watermark", {
   description: description("去除用户选中的一张图片中的水印或多余文字。文件会发送至 550W Open API；成功扣 10 积分，多张图片逐张处理。", "Remove a watermark or unwanted text from one user-selected local image. The selected file is sent to the 550W Open API. Costs 10 credits only on success. Call serially for multiple images."),
   inputSchema: {
     filePath: z.string().describe(description("本地 JPG、PNG、BMP、WebP、AVIF、TIFF 或 SVG 图片的绝对路径。", "Absolute path to a JPG, PNG, BMP, WebP, AVIF, TIFF, or SVG image.")),
+    confirmProcessing,
     sync: z.boolean().optional().default(true).describe(description("为 true 时等待处理结果。", "Wait for the result when true.")),
     operationId: z.string().min(8).max(64).regex(/^[A-Za-z0-9._:-]+$/).optional().describe(description("可选请求追踪标识。", "Optional request tracking key.")),
     ...localeField,

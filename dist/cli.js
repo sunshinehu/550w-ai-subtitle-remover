@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dispatcher_1 = require("./dispatcher");
 const i18n_1 = require("./i18n");
 const local_media_1 = require("./local-media");
+const processing_approval_1 = require("./processing-approval");
 async function readStdin() {
     const chunks = [];
     for await (const chunk of process.stdin)
@@ -28,6 +29,12 @@ async function main() {
             throw new Error((0, i18n_1.localize)(locale, "请通过标准输入提供 JSON 请求", "Provide a JSON request on standard input"));
         const parsed = JSON.parse(input);
         locale = parsed.params?.locale;
+        const approvalError = (0, processing_approval_1.requireProcessingApproval)(parsed.action, parsed.params);
+        if (approvalError) {
+            process.stdout.write(`${JSON.stringify(approvalError)}\n`);
+            process.exitCode = 1;
+            return;
+        }
         const request = attachLocalFile(parsed);
         const result = await (0, dispatcher_1.invoke)(request);
         process.stdout.write(`${JSON.stringify(result)}\n`);

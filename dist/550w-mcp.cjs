@@ -44660,6 +44660,23 @@ var require_delete_task = __commonJS({
   }
 });
 
+// dist/processing-approval.js
+var require_processing_approval = __commonJS({
+  "dist/processing-approval.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.requireProcessingApproval = requireProcessingApproval;
+    var types_1 = require_types4();
+    var i18n_12 = require_i18n();
+    var outboundActions = /* @__PURE__ */ new Set(["uploadVideo", "submitTask", "removeVideoWatermark", "removeImageWatermark", "workflow"]);
+    function requireProcessingApproval(action, params = {}) {
+      if (!outboundActions.has(action) || params.confirmProcessing === true)
+        return null;
+      return { code: types_1.ErrorCode.INVALID_PARAMS, message: (0, i18n_12.localize)(params.locale, "\u8BF7\u5148\u5411\u7528\u6237\u8BF4\u660E\u6240\u9009\u7D20\u6750\u6216\u94FE\u63A5\u5C06\u53D1\u9001\u81F3 550W\uFF0C\u5904\u7406\u53EF\u80FD\u6263\u9664\u79EF\u5206\uFF1B\u7528\u6237\u786E\u8BA4\u672C\u6B21\u64CD\u4F5C\u540E\u4F20\u5165 confirmProcessing=true\u3002", "Explain that selected media or links will be sent to 550W and processing may spend credits. Set confirmProcessing=true only after the user approves this operation.") };
+    }
+  }
+});
+
 // dist/dispatcher.js
 var require_dispatcher = __commonJS({
   "dist/dispatcher.js"(exports2) {
@@ -44682,7 +44699,11 @@ var require_dispatcher = __commonJS({
     var validator_1 = require_validator();
     var error_handler_1 = require_error_handler();
     var i18n_12 = require_i18n();
+    var processing_approval_12 = require_processing_approval();
     async function invoke(request) {
+      const approvalError = (0, processing_approval_12.requireProcessingApproval)(request.action, request.params);
+      if (approvalError)
+        return approvalError;
       const credentialManager = new credential_manager_1.CredentialManager();
       if (request.action === "configureCredentials") {
         const params = request.params || {};
@@ -44810,7 +44831,7 @@ var require_package = __commonJS({
   "package.json"(exports2, module2) {
     module2.exports = {
       name: "ai-subtitle-remover",
-      version: "3.1.1",
+      version: "3.1.3",
       description: "Remove image watermarks, local video subtitles or visual watermarks, and platform watermarks from copied video links with the 550W Open API",
       main: "dist/index.js",
       bin: {
@@ -44820,9 +44841,17 @@ var require_package = __commonJS({
       types: "dist/index.d.ts",
       scripts: {
         build: "tsc",
-        test: "npm run build --silent && node --test test/oauth-media-uploader.test.js",
-        bundle: "npm run build && esbuild dist/cli.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/550w-skill.cjs && esbuild dist/mcp-server.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/550w-mcp.cjs && esbuild dist/oauth-upload-cli.js --bundle --platform=node --target=node18 --format=cjs --outfile=scripts/550w-upload.cjs",
-        verify: "node scripts/verify-github-release.cjs"
+        test: "npm run build --silent && node --test test/*.test.js",
+        package: "node ../mcp-distribution/build-channels.mjs",
+        "package:verify": "node ../mcp-distribution/verify-release.mjs && node ../mcp-distribution/verify-channels.mjs",
+        "package:repro": "node ../mcp-distribution/verify-reproducible.mjs",
+        "package:test": "node --test ../mcp-distribution/test/*.test.mjs && cd regions/global/ai-subtitle-remover && uv run --locked python -m unittest discover -s tests -v",
+        "package:stage-site": "node ../mcp-distribution/stage-official-downloads.mjs --write",
+        "package:verify-site": "node ../mcp-distribution/stage-official-downloads.mjs",
+        "package:verify-live-site": "node ../mcp-distribution/verify-live-downloads.mjs",
+        "package:acceptance": "node ../mcp-distribution/verify-acceptance.mjs",
+        "package:legacy-cn": "bash build.sh cn",
+        "package:legacy-global": "bash build.sh global"
       },
       files: [
         "dist/",
@@ -44853,6 +44882,7 @@ var zod_1 = require_zod();
 var dispatcher_1 = require_dispatcher();
 var i18n_1 = require_i18n();
 var local_media_1 = require_local_media();
+var processing_approval_1 = require_processing_approval();
 function withLocalFile(action, params) {
   const filePath = typeof params.filePath === "string" ? params.filePath : null;
   if (!filePath)
@@ -44870,6 +44900,9 @@ function toolResult(result) {
   };
 }
 async function call(action, params) {
+  const approvalError = (0, processing_approval_1.requireProcessingApproval)(action, params);
+  if (approvalError)
+    return toolResult(approvalError);
   try {
     if (action === "workflow") {
       const hasFile = typeof params.filePath === "string" && params.filePath.trim() !== "";
@@ -44887,11 +44920,13 @@ var locale = zod_1.z.string().min(2).optional().describe("Optional BCP 47 langua
 var domestic = (0, i18n_1.resolveServiceRegion)() === "domestic";
 var description = (zh, en) => domestic ? zh : en;
 var localeField = domestic ? {} : { locale };
+var confirmProcessing = zod_1.z.literal(true).describe(description("\u4EC5\u5728\u7528\u6237\u786E\u8BA4\u672C\u6B21\u7D20\u6750\u4F20\u8F93\u548C\u53EF\u80FD\u6263\u9664\u79EF\u5206\u540E\u4F20\u5165 true\u3002", "Set true only after the user approves this media transmission and possible credit charge."));
 var server = new mcp_js_1.McpServer({ name: "ai-subtitle-remover", version: require_package().version });
 server.registerTool("remove_video_subtitles", {
   description: description("\u53BB\u9664\u7528\u6237\u6307\u5B9A MP4/MOV \u89C6\u9891\u4E2D\u7684\u786C\u5B57\u5E55\u6216\u753B\u9762\u6C34\u5370\uFF1B\u9ED8\u8BA4\u6574\u5E27\u64E6\u9664\uFF0C\u4EC5\u5728\u7528\u6237\u7ED9\u51FA\u77E9\u5F62\u5750\u6807\u65F6\u6309\u533A\u57DF\u64E6\u9664\u3002\u6240\u9009\u6587\u4EF6\u6216\u76F4\u94FE\u4F1A\u53D1\u9001\u81F3 550W Open API \u5E76\u8BA1\u8D39\u3002", "Erase hardcoded subtitles or visual watermarks from a selected MP4/MOV video. Full-frame by default; use a rectangle only when supplied by the user. The file or direct URL is sent to the billed 550W Open API."),
   inputSchema: {
     filePath: zod_1.z.string().optional().describe(description("\u672C\u5730 MP4 \u6216 MOV \u6587\u4EF6\u7684\u7EDD\u5BF9\u8DEF\u5F84\u3002", "Absolute path to a local MP4 or MOV file.")),
+    confirmProcessing,
     videoUrl: zod_1.z.string().url().optional().describe(description("MP4 \u6216 MOV \u6587\u4EF6\u7684 HTTP(S) \u76F4\u94FE\u3002", "Direct HTTP(S) URL to an MP4 or MOV file.")),
     width: zod_1.z.number().int().positive().optional().describe(description("\u89C6\u9891\u771F\u5B9E\u50CF\u7D20\u5BBD\u5EA6\uFF1B\u4E0E\u9AD8\u5EA6\u3001\u65F6\u957F\u4E00\u8D77\u63D0\u4F9B\u53EF\u8DF3\u8FC7\u672C\u5730\u68C0\u6D4B\u3002", "Actual pixel width; supply with height and duration to skip local ffprobe.")),
     height: zod_1.z.number().int().positive().optional().describe(description("\u89C6\u9891\u771F\u5B9E\u50CF\u7D20\u9AD8\u5EA6\uFF1B\u4E0E\u5BBD\u5EA6\u3001\u65F6\u957F\u4E00\u8D77\u63D0\u4F9B\u3002", "Actual pixel height; supply with width and duration.")),
@@ -44911,6 +44946,7 @@ server.registerTool("remove_video_watermark", {
   description: description("\u89E3\u6790\u4ECE\u6296\u97F3\u3001\u5FEB\u624B\u3001Bilibili\u3001\u5FAE\u535A\u7B49 App \u6216\u7F51\u7AD9\u590D\u5236\u7684\u5206\u4EAB\u94FE\u63A5\uFF0C\u8FD4\u56DE\u65E0\u6C34\u5370\u89C6\u9891\u76F4\u94FE\uFF1B\u4E0B\u8F7D\u5931\u8D25\u6216\u8D85\u65F6\u5219\u628A\u5DF2\u89E3\u6790\u7684\u76F4\u94FE\u4EA4\u7ED9\u7528\u6237\u5728\u6D4F\u89C8\u5668\u4E0B\u8F7D\u3002\u6210\u529F\u89E3\u6790\u6263 1 \u79EF\u5206\u3002", "Resolve a TikTok, X, or other supported app/site share link to a watermark-free video URL. If downloading the resolved video fails or times out, give that URL to the user to open in a browser. A successful resolution costs one credit."),
   inputSchema: {
     videoUrl: zod_1.z.string().describe(description("\u4ECE\u77ED\u89C6\u9891 App \u5185\u590D\u5236\u7684\u516C\u5F00\u89C6\u9891\u5206\u4EAB\u94FE\u63A5\uFF0C\u6216\u5305\u542B\u5355\u4E2A\u94FE\u63A5\u7684\u5206\u4EAB\u6587\u672C\u3002", "Public short-video share URL copied from the platform app, or share text containing one URL.")),
+    confirmProcessing,
     operationId: zod_1.z.string().min(8).max(64).regex(/^[A-Za-z0-9._:-]+$/).optional().describe(description("\u5EFA\u8BAE\u4F20\u5165\u7A33\u5B9A\u64CD\u4F5C\u6807\u8BC6\uFF0C\u4EE5\u652F\u6301\u5B89\u5168\u91CD\u8BD5\u3002", "Recommended stable operation ID for safe retries.")),
     ...localeField
   },
@@ -44920,6 +44956,7 @@ server.registerTool("remove_image_watermark", {
   description: description("\u53BB\u9664\u7528\u6237\u9009\u4E2D\u7684\u4E00\u5F20\u56FE\u7247\u4E2D\u7684\u6C34\u5370\u6216\u591A\u4F59\u6587\u5B57\u3002\u6587\u4EF6\u4F1A\u53D1\u9001\u81F3 550W Open API\uFF1B\u6210\u529F\u6263 10 \u79EF\u5206\uFF0C\u591A\u5F20\u56FE\u7247\u9010\u5F20\u5904\u7406\u3002", "Remove a watermark or unwanted text from one user-selected local image. The selected file is sent to the 550W Open API. Costs 10 credits only on success. Call serially for multiple images."),
   inputSchema: {
     filePath: zod_1.z.string().describe(description("\u672C\u5730 JPG\u3001PNG\u3001BMP\u3001WebP\u3001AVIF\u3001TIFF \u6216 SVG \u56FE\u7247\u7684\u7EDD\u5BF9\u8DEF\u5F84\u3002", "Absolute path to a JPG, PNG, BMP, WebP, AVIF, TIFF, or SVG image.")),
+    confirmProcessing,
     sync: zod_1.z.boolean().optional().default(true).describe(description("\u4E3A true \u65F6\u7B49\u5F85\u5904\u7406\u7ED3\u679C\u3002", "Wait for the result when true.")),
     operationId: zod_1.z.string().min(8).max(64).regex(/^[A-Za-z0-9._:-]+$/).optional().describe(description("\u53EF\u9009\u8BF7\u6C42\u8FFD\u8E2A\u6807\u8BC6\u3002", "Optional request tracking key.")),
     ...localeField

@@ -1,6 +1,6 @@
 # 550W Watermark & Text Eraser
 
-Global media Skill, version 3.1.1. Remove text and watermarks from images, hard subtitles and visual watermarks from local MP4/MOV videos, and platform watermarks from supported TikTok and X share links. Video processing defaults to the full frame, with an optional explicit pixel rectangle. Use Share → Copy link in the platform app or website. If downloading fails after successful resolution, return the resolved video URL for browser download.
+Global media Skill, version 3.1.3. Remove text and watermarks from images, hard subtitles and visual watermarks from local MP4/MOV videos, and platform watermarks from supported TikTok and X share links. Video processing defaults to the full frame, with an optional explicit pixel rectangle. Use Share → Copy link in the platform app or website. If downloading fails after successful resolution, return the resolved video URL for browser download. Obtain the user's approval before uploads or paid operations; executable helpers require explicit processing confirmation.
 
 This repository contains the installable global distribution. The Skill entry point is [`SKILL.md`](SKILL.md); see [`references/agent-compatibility.md`](references/agent-compatibility.md) for host-specific setup and [`references/api-contract.md`](references/api-contract.md) for API behavior.
 

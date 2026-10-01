@@ -25,6 +25,7 @@ server.registerTool("upload_prepared_media", {
     description: "Upload a user-selected local image/video to 550W using the short-lived URL and ticket returned by remote prepare_media_upload. Requires the user's agreement to send the file. Does not need an OAuth token. Image uploads can create a billed task; reuse the same operationId for uncertain outcomes.",
     inputSchema: {
         filePath, mediaType,
+        confirmProcessing: zod_1.z.literal(true).describe('Set true only after the user approves this file transmission and possible processing charge.'),
         region: zod_1.z.literal("global"),
         uploadUrl: zod_1.z.string().url(),
         uploadTicket: zod_1.z.string().min(1),

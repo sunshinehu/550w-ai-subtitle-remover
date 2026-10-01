@@ -6,6 +6,7 @@ import FormData from "form-data";
 export type McpMediaType = "image" | "video";
 export type McpRegion = "cn" | "global";
 export interface PreparedMediaUpload {
+  confirmProcessing?: boolean;
   filePath: string;
   mediaType: McpMediaType;
   region: McpRegion;
@@ -59,6 +60,7 @@ export function inspectLocalMedia(filePath: string, mediaType: McpMediaType): { 
 
 /** Uploads a user-selected local file using a one-use MCP ticket; never needs an OAuth token. */
 export async function uploadPreparedMedia(input: PreparedMediaUpload): Promise<Record<string, unknown>> {
+  if (input.confirmProcessing !== true) throw new Error('User approval of media transmission and possible billing is required (confirmProcessing=true)');
   const url = validatePreparedUpload(input);
   const extension = path.extname(input.filePath).toLowerCase();
   if (!EXTENSIONS[input.mediaType].has(extension)) throw new Error("Unsupported media file extension");

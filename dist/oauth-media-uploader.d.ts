@@ -1,6 +1,7 @@
 export type McpMediaType = "image" | "video";
 export type McpRegion = "cn" | "global";
 export interface PreparedMediaUpload {
+    confirmProcessing?: boolean;
     filePath: string;
     mediaType: McpMediaType;
     region: McpRegion;

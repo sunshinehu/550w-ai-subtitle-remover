@@ -17,7 +17,11 @@ const delete_task_1 = require("./actions/delete-task");
 const validator_1 = require("./validator");
 const error_handler_1 = require("./error-handler");
 const i18n_1 = require("./i18n");
+const processing_approval_1 = require("./processing-approval");
 async function invoke(request) {
+    const approvalError = (0, processing_approval_1.requireProcessingApproval)(request.action, request.params);
+    if (approvalError)
+        return approvalError;
     const credentialManager = new credential_manager_1.CredentialManager();
     if (request.action === "configureCredentials") {
         const params = request.params || {};

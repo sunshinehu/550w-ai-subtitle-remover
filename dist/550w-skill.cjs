@@ -1365,6 +1365,23 @@ var require_delete_task = __commonJS({
   }
 });
 
+// dist/processing-approval.js
+var require_processing_approval = __commonJS({
+  "dist/processing-approval.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.requireProcessingApproval = requireProcessingApproval;
+    var types_1 = require_types();
+    var i18n_12 = require_i18n();
+    var outboundActions = /* @__PURE__ */ new Set(["uploadVideo", "submitTask", "removeVideoWatermark", "removeImageWatermark", "workflow"]);
+    function requireProcessingApproval(action, params = {}) {
+      if (!outboundActions.has(action) || params.confirmProcessing === true)
+        return null;
+      return { code: types_1.ErrorCode.INVALID_PARAMS, message: (0, i18n_12.localize)(params.locale, "\u8BF7\u5148\u5411\u7528\u6237\u8BF4\u660E\u6240\u9009\u7D20\u6750\u6216\u94FE\u63A5\u5C06\u53D1\u9001\u81F3 550W\uFF0C\u5904\u7406\u53EF\u80FD\u6263\u9664\u79EF\u5206\uFF1B\u7528\u6237\u786E\u8BA4\u672C\u6B21\u64CD\u4F5C\u540E\u4F20\u5165 confirmProcessing=true\u3002", "Explain that selected media or links will be sent to 550W and processing may spend credits. Set confirmProcessing=true only after the user approves this operation.") };
+    }
+  }
+});
+
 // dist/dispatcher.js
 var require_dispatcher = __commonJS({
   "dist/dispatcher.js"(exports2) {
@@ -1387,7 +1404,11 @@ var require_dispatcher = __commonJS({
     var validator_1 = require_validator();
     var error_handler_1 = require_error_handler();
     var i18n_12 = require_i18n();
+    var processing_approval_12 = require_processing_approval();
     async function invoke(request) {
+      const approvalError = (0, processing_approval_12.requireProcessingApproval)(request.action, request.params);
+      if (approvalError)
+        return approvalError;
       const credentialManager = new credential_manager_1.CredentialManager();
       if (request.action === "configureCredentials") {
         const params = request.params || {};
@@ -1515,6 +1536,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var dispatcher_1 = require_dispatcher();
 var i18n_1 = require_i18n();
 var local_media_1 = require_local_media();
+var processing_approval_1 = require_processing_approval();
 async function readStdin() {
   const chunks = [];
   for await (const chunk of process.stdin)
@@ -1539,6 +1561,13 @@ async function main() {
       throw new Error((0, i18n_1.localize)(locale, "\u8BF7\u901A\u8FC7\u6807\u51C6\u8F93\u5165\u63D0\u4F9B JSON \u8BF7\u6C42", "Provide a JSON request on standard input"));
     const parsed = JSON.parse(input);
     locale = parsed.params?.locale;
+    const approvalError = (0, processing_approval_1.requireProcessingApproval)(parsed.action, parsed.params);
+    if (approvalError) {
+      process.stdout.write(`${JSON.stringify(approvalError)}
+`);
+      process.exitCode = 1;
+      return;
+    }
     const request = attachLocalFile(parsed);
     const result = await (0, dispatcher_1.invoke)(request);
     process.stdout.write(`${JSON.stringify(result)}
