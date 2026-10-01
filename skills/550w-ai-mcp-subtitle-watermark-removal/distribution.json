@@ -10,5 +10,6 @@
     "oauth-mcp",
     "openapi"
   ],
-  "preferredAccess": "oauth-mcp"
+  "preferredAccess": "oauth-mcp",
+  "version": "3.1.3"
 }

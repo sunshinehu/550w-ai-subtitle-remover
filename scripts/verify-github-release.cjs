@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const cp = require('node:child_process');
-assert.equal(require('../package.json').version, '3.1.1');
+assert.equal(require('../package.json').version, '3.1.3');
 for (const root of ['.', 'skills/550w-ai-mcp-subtitle-watermark-removal']) {
   const text = fs.readFileSync(`${root}/SKILL.md`, 'utf8');
   assert.match(text, /550W Watermark & Text Eraser/);

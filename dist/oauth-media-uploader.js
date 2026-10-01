@@ -60,6 +60,8 @@ function inspectLocalMedia(filePath, mediaType) {
 }
 /** Uploads a user-selected local file using a one-use MCP ticket; never needs an OAuth token. */
 async function uploadPreparedMedia(input) {
+    if (input.confirmProcessing !== true)
+        throw new Error('User approval of media transmission and possible billing is required (confirmProcessing=true)');
     const url = validatePreparedUpload(input);
     const extension = node_path_1.default.extname(input.filePath).toLowerCase();
     if (!EXTENSIONS[input.mediaType].has(extension))

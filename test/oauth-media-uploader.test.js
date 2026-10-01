@@ -11,6 +11,7 @@ const { validatePreparedUpload, inspectLocalMedia, uploadPreparedMedia } = requi
 
 const ticket = '12345678-1234-1234-1234-123456789abc';
 const base = { filePath: '/tmp/example.mp4', mediaType: 'video', region: 'global',
+  confirmProcessing: true,
   uploadUrl: 'https://www.550wai.cn/mcp-media/global/video', uploadTicket: ticket };
 
 test('ticket uploader accepts only the exact regional HTTPS endpoint', () => {
@@ -25,6 +26,13 @@ test('ticket uploader accepts only the exact regional HTTPS endpoint', () => {
   assert.throws(() => validatePreparedUpload({ ...base, filePath: 'relative.mp4' }), /absolute/);
   assert.throws(() => validatePreparedUpload({ ...base, uploadTicket: 'secret' }), /ticket/);
   assert.throws(() => validatePreparedUpload({ ...base, timeoutMs: 0 }), /timeout/);
+});
+
+test('upload requires explicit approval before touching the selected file or network', async t => {
+  t.mock.method(https, 'request', () => { throw new Error('Unexpected network access'); });
+  for (const confirmProcessing of [undefined, false, 'true', 1]) {
+    await assert.rejects(uploadPreparedMedia({ ...base, confirmProcessing }), /approval/);
+  }
 });
 
 test('image upload requires stable operation ID before opening a file', () => {

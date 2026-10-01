@@ -1,8 +1,9 @@
 ---
+displayName: 550W Watermark & Text Eraser
 name: ai-subtitle-remover
 description: "550W Watermark & Text Eraser: remove image text/watermarks, local video subtitles/visual watermarks, and platform watermarks from TikTok or X share links. OAuth MCP or API Key access depends on the host."
 metadata:
-  version: 3.1.1
+  version: 3.1.3
   openclaw:
     primaryEnv: SUBTITLE_REMOVER_API_KEY
     envVars:
@@ -41,3 +42,6 @@ This Skill offers two independent routes. Installing it does not register MCP, g
 Both routes include upload support, requiring permission to read selected files and execute Node.js or equivalent host file transfer. API Key uses an absolute `params.filePath`; OAuth uses bundled `scripts/550w-upload.cjs` inspect/upload and remote upload tickets. Read the selected workflow before execution. Never put credentials in command-line arguments, logs, or public packages. A cloud host cannot assume access to a path on the user's computer. If file upload is unavailable, direct the user to <https://eraser.550wai.com/>; a share link is not a substitute for a local video. Share-link cleanup may still be used independently when available.
 
 Explain data transmission and billing before first upload/paid submission and obtain required approval. Preserve stable operation/task IDs. Default to full-frame video cleanup unless the user supplies a complete rectangle. If resolved video downloading fails, return the resolved data.video URL. Only an explicit insufficient-credit response warrants <https://eraser.550wai.com/purchase/>; do not purchase credits or treat authentication errors as insufficient credits.
+
+
+Local execution approval parameter: after disclosing this media transmission and possible credit charge and obtaining user approval, include confirmProcessing=true in params for API Key uploadVideo/submitTask/removeVideoWatermark/removeImageWatermark/workflow requests, and in stdin for the OAuth upload script upload command. Missing or non-true values are rejected; never assume approval. Queries and inspect do not require it. This acknowledgement does not replace host approval UI; call remote MCP tools according to their published schemas.

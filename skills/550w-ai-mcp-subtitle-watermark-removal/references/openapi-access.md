@@ -42,3 +42,6 @@ If the host has no registered tools but can run Node.js 18+ and read the user's 
 - Return the result or actionable error to the user in every case.
 
 Read the bundled `references/api-contract.md` for limits, statuses, billing formulas, and errors, and `references/agent-compatibility.md` for local installation. For web readers, the same files are available as [API contract](https://github.com/sunshinehu/550w-ai-subtitle-remover/blob/main/references/api-contract.md) and [agent compatibility](https://github.com/sunshinehu/550w-ai-subtitle-remover/blob/main/references/agent-compatibility.md).
+
+
+Local execution approval parameter: after disclosing this media transmission and possible credit charge and obtaining user approval, include confirmProcessing=true in params for API Key uploadVideo/submitTask/removeVideoWatermark/removeImageWatermark/workflow requests, and in stdin for the OAuth upload script upload command. Missing or non-true values are rejected; never assume approval. Queries and inspect do not require it. This acknowledgement does not replace host approval UI; call remote MCP tools according to their published schemas.

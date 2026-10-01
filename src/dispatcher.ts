@@ -14,8 +14,11 @@ import { deleteTask } from "./actions/delete-task";
 import { validateCredential } from "./validator";
 import { mapApiError } from "./error-handler";
 import { localize } from "./i18n";
+import { requireProcessingApproval } from './processing-approval';
 
 export async function invoke(request: SkillRequest): Promise<SkillResponse> {
+  const approvalError = requireProcessingApproval(request.action, request.params);
+  if (approvalError) return approvalError;
   const credentialManager = new CredentialManager();
 
   if (request.action === "configureCredentials") {
