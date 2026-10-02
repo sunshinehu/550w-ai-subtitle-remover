@@ -20,6 +20,17 @@ class SubmitLocalVideoTool(Tool):
                        not float(value).is_integer() for value in coords):
                     raise ValueError("Rectangle coordinates must be whole pixel numbers")
                 rectangle = tuple(int(value) for value in coords)
+                if not (0 <= rectangle[0] < rectangle[2] and 0 <= rectangle[1] < rectangle[3]):
+                    raise ValueError("Rectangle must have positive dimensions")
+            if "access_token" in self.runtime.credentials:
+                params = {"operationId": key}
+                if len(key) > 64:
+                    raise ValueError("operationId must be at most 64 characters")
+                if rectangle is not None:
+                    params["area"] = ",".join(str(value) for value in rectangle)
+                yield self.create_json_message(call_upload(self.runtime.credentials, "/open/uploadVideo",
+                    tool_parameters.get("file"), params, timeout=180))
+                return
             uploaded = call_upload(self.runtime.credentials, "/open/uploadVideo",
                                    tool_parameters.get("file"), timeout=180)
             if uploaded.get("code") != 200:

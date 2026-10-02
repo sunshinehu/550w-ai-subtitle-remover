@@ -13,7 +13,7 @@ identity:
     ja_JP: "画像の透かし、動画の字幕や透かし、共有リンクのプラットフォーム透かしを除去します。"
   icon: "icon.png"
 
-# Native API Key provider; OAuth is not implemented in this adapter.
+# Native OAuth and API Key provider.
 credentials_for_provider:
   userNo:
     type: text-input
@@ -36,6 +36,30 @@ credentials_for_provider:
       zh_Hans: 请在 https://qzm.550wai.cn/api-keys 创建国内版 API 密钥
     url: https://qzm.550wai.cn/api-keys
 
+
+oauth_schema:
+  client_schema:
+    - name: oauth_state_secret
+      type: secret-input
+      required: true
+      label: {en_US: OAuth state encryption secret, zh_Hans: OAuth 授权状态加密密钥}
+      help:
+        en_US: Administrator setup only. Use a unique random secret of at least 32 characters per Dify installation. Keep it stable across workers. Public clients register automatically with S256 PKCE; no shared 550W client secret is needed.
+        zh_Hans: 管理员一次性配置，每个 Dify 实例使用独立的至少32字符随机密钥，多节点保持一致。使用 S256 PKCE 自动注册客户端，无需共享550W客户端密钥。
+      url: https://qzm.550wai.cn/agent/
+  credentials_schema:
+    - name: access_token
+      type: secret-input
+      label: {en_US: Access token, zh_Hans: 访问令牌}
+    - name: refresh_token
+      type: secret-input
+      label: {en_US: Refresh token, zh_Hans: 刷新令牌}
+    - name: client_id
+      type: text-input
+      label: {en_US: Registered client ID, zh_Hans: 注册客户端编号}
+    - name: region
+      type: text-input
+      label: {en_US: Account region, zh_Hans: 账户区域}
 tools:
   - tools/query-credits.yaml
   - tools/remove-image-watermark.yaml
@@ -44,6 +68,7 @@ tools:
   - tools/submit-local-video.yaml
   - tools/submit-subtitle-task.yaml
   - tools/subtitle-task-detail.yaml
+  - tools/operation-detail.yaml
 extra:
   python:
     source: provider/ai-subtitle-remover.py

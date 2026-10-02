@@ -1,0 +1,18 @@
+identity:
+  name: operation_detail
+  author: sunshinehu
+  label: {en_US: Check OAuth operation, zh_Hans: 查询 OAuth 操作回执}
+description:
+  human: {en_US: Read an OAuth upload or share-link submission receipt without creating another task., zh_Hans: 查询 OAuth 上传或分享链接操作回执，不重复创建任务。}
+  llm: OAuth only. Query the operationId returned by submission to recover a pending share-link result or an uncertain submission. Do not resubmit paid processing to check status. API Key users use the existing task lookup tools instead.
+parameters:
+  - name: operationId
+    type: string
+    required: true
+    label: {en_US: Operation ID, zh_Hans: 操作编号}
+    human_description: {en_US: The same operation ID used for submission., zh_Hans: 提交时使用的同一个操作编号。}
+    llm_description: Existing OAuth operation identifier, 8–64 safe characters.
+    form: llm
+extra:
+  python:
+    source: tools/operation-detail.py
