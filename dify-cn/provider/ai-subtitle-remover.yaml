@@ -1,8 +1,8 @@
 identity:
   author: "sunshinehu"
-  name: "ai-subtitle-remover"
+  name: "ai-subtitle-remover-cn"
   label:
-    en_US: "550W Watermark & Text Eraser"
+    en_US: "550W AI去字幕去水印"
     zh_Hans: "550W AI去字幕去水印"
     pt_BR: "Ferramentas de mídia 550W AI"
     ja_JP: "550W AI メディアツール"
@@ -22,9 +22,9 @@ credentials_for_provider:
       en_US: User number
       zh_Hans: 用户编号
     help:
-      en_US: Find your user number at https://eraser.550wai.com/api/
-      zh_Hans: 请在 https://eraser.550wai.com/api/ 查看全球版用户编号
-    url: https://eraser.550wai.com/api/
+      en_US: Find your user number at https://qzm.550wai.cn/api-keys
+      zh_Hans: 请在 https://qzm.550wai.cn/api-keys 查看国内版用户编号
+    url: https://qzm.550wai.cn/api-keys
   apiKey:
     type: secret-input
     required: true
@@ -32,9 +32,9 @@ credentials_for_provider:
       en_US: API key
       zh_Hans: API 密钥
     help:
-      en_US: Create an API key at https://eraser.550wai.com/api/
-      zh_Hans: 请在 https://eraser.550wai.com/api/ 创建全球版 API 密钥
-    url: https://eraser.550wai.com/api/
+      en_US: Create an API key at https://qzm.550wai.cn/api-keys
+      zh_Hans: 请在 https://qzm.550wai.cn/api-keys 创建国内版 API 密钥
+    url: https://qzm.550wai.cn/api-keys
 
 tools:
   - tools/query-credits.yaml

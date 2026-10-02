@@ -1,11 +1,11 @@
 version: 3.1.4
 type: plugin
 author: sunshinehu
-name: ai-subtitle-remover
+name: ai-subtitle-remover-cn
 repo: https://github.com/sunshinehu/550w-ai-subtitle-remover
 contact: support@550wai.com
 label:
-  en_US: 550W Watermark & Text Eraser
+  en_US: 550W AI去字幕去水印
   ja_JP: 550W AI メディアツール
   zh_Hans: 550W AI去字幕去水印
   pt_BR: Ferramentas de mídia 550W AI
