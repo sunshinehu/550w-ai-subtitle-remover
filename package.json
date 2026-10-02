@@ -1,6 +1,6 @@
 {
   "name": "ai-subtitle-remover",
-  "version": "3.1.3",
+  "version": "3.1.4",
   "description": "Remove image watermarks, local video subtitles or visual watermarks, and platform watermarks from copied video links with the 550W Open API",
   "main": "dist/index.js",
   "bin": {
@@ -10,7 +10,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "npm run build --silent && node --test test/oauth-media-uploader.test.js test/processing-approval.test.js",
+    "test": "npm run build --silent && node --test test/oauth-media-uploader.test.js test/processing-approval.test.js test/credential-consent.test.js",
     "bundle": "npm run build && esbuild dist/cli.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/550w-skill.cjs && esbuild dist/mcp-server.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/550w-mcp.cjs && esbuild dist/oauth-upload-cli.js --bundle --platform=node --target=node18 --format=cjs --outfile=scripts/550w-upload.cjs",
     "verify": "node scripts/verify-github-release.cjs"
   },

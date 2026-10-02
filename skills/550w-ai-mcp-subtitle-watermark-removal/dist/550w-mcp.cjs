@@ -44707,6 +44707,9 @@ var require_dispatcher = __commonJS({
       const credentialManager = new credential_manager_1.CredentialManager();
       if (request.action === "configureCredentials") {
         const params = request.params || {};
+        if (params.confirmCredentialStorage !== true) {
+          return { code: types_1.ErrorCode.INVALID_PARAMS, message: (0, i18n_12.localize)(params.locale, "\u51ED\u8BC1\u9A8C\u8BC1\u4F1A\u5C06\u7528\u6237\u7F16\u53F7\u548C API Key \u53D1\u9001\u81F3 550W\uFF0C\u5E76\u4FDD\u5B58\u5230\u672C\u673A\u4E13\u7528\u914D\u7F6E\u6587\u4EF6\u3002\u8BF7\u53D6\u5F97\u7528\u6237\u5BF9\u9A8C\u8BC1\u548C\u4FDD\u5B58\u7684\u540C\u610F\u540E\u4F20\u5165 confirmCredentialStorage=true\uFF1B\u5171\u4EAB\u5BBF\u4E3B\u5EFA\u8BAE\u4F7F\u7528\u73AF\u5883\u51ED\u636E\u6216 OAuth\u3002", "Credential verification sends your user ID and API key to 550W and saves them in a dedicated local configuration file. Obtain consent for verification and storage before setting confirmCredentialStorage=true; prefer environment credentials or OAuth on shared hosts.") };
+        }
         const validationError = (0, validator_1.validateCredential)(params.userNo, params.apiKey, params.locale);
         if (validationError)
           return validationError;
@@ -44829,48 +44832,7 @@ var require_local_media = __commonJS({
 // package.json
 var require_package = __commonJS({
   "package.json"(exports2, module2) {
-    module2.exports = {
-      name: "ai-subtitle-remover",
-      version: "3.1.3",
-      description: "Remove image watermarks, local video subtitles or visual watermarks, and platform watermarks from copied video links with the 550W Open API",
-      main: "dist/index.js",
-      bin: {
-        "550w-skill": "dist/550w-skill.cjs",
-        "550w-mcp": "dist/550w-mcp.cjs"
-      },
-      types: "dist/index.d.ts",
-      scripts: {
-        build: "tsc",
-        test: "npm run build --silent && node --test test/*.test.js",
-        package: "node ../mcp-distribution/build-channels.mjs",
-        "package:verify": "node ../mcp-distribution/verify-release.mjs && node ../mcp-distribution/verify-channels.mjs",
-        "package:repro": "node ../mcp-distribution/verify-reproducible.mjs",
-        "package:test": "node --test ../mcp-distribution/test/*.test.mjs && cd regions/global/ai-subtitle-remover && uv run --locked python -m unittest discover -s tests -v",
-        "package:stage-site": "node ../mcp-distribution/stage-official-downloads.mjs --write",
-        "package:verify-site": "node ../mcp-distribution/stage-official-downloads.mjs",
-        "package:verify-live-site": "node ../mcp-distribution/verify-live-downloads.mjs",
-        "package:acceptance": "node ../mcp-distribution/verify-acceptance.mjs",
-        "package:legacy-cn": "bash build.sh cn",
-        "package:legacy-global": "bash build.sh global"
-      },
-      files: [
-        "dist/",
-        "references/",
-        "skill.json",
-        "SKILL.md"
-      ],
-      dependencies: {
-        "@modelcontextprotocol/sdk": "^1.30.0",
-        axios: "^1.20.0",
-        "form-data": "^4.0.6",
-        zod: "^4.6.5"
-      },
-      devDependencies: {
-        "@types/node": "^20.14.0",
-        esbuild: "^0.28.2",
-        typescript: "^5.4.5"
-      }
-    };
+    module2.exports = { name: "ai-subtitle-remover", version: "3.1.4", description: "Remove image watermarks, local video subtitles or visual watermarks, and platform watermarks from copied video links with the 550W Open API", main: "dist/index.js", bin: { "550w-skill": "dist/550w-skill.cjs", "550w-mcp": "dist/550w-mcp.cjs" }, types: "dist/index.d.ts", scripts: { build: "tsc", test: "npm run build --silent && node --test test/*.test.js", package: "node ../mcp-distribution/build-channels.mjs", "package:verify": "node ../mcp-distribution/verify-release.mjs && node ../mcp-distribution/verify-channels.mjs", "package:repro": "node ../mcp-distribution/verify-reproducible.mjs", "package:test": "node --test ../mcp-distribution/test/*.test.mjs && cd regions/global/ai-subtitle-remover && uv run --locked python -m unittest discover -s tests -v", "package:stage-site": "node ../mcp-distribution/stage-official-downloads.mjs --write", "package:verify-site": "node ../mcp-distribution/stage-official-downloads.mjs", "package:verify-live-site": "node ../mcp-distribution/verify-live-downloads.mjs", "package:acceptance": "node ../mcp-distribution/verify-acceptance.mjs", "package:legacy-cn": "bash build.sh cn", "package:legacy-global": "bash build.sh global" }, files: ["dist/", "references/", "skill.json", "SKILL.md"], dependencies: { "@modelcontextprotocol/sdk": "^1.30.0", axios: "^1.20.0", "form-data": "^4.0.6", zod: "^4.6.5" }, devDependencies: { "@types/node": "^20.14.0", esbuild: "^0.28.2", typescript: "^5.4.5" } };
   }
 });
 

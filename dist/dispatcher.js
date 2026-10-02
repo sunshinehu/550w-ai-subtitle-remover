@@ -25,6 +25,9 @@ async function invoke(request) {
     const credentialManager = new credential_manager_1.CredentialManager();
     if (request.action === "configureCredentials") {
         const params = request.params || {};
+        if (params.confirmCredentialStorage !== true) {
+            return { code: types_1.ErrorCode.INVALID_PARAMS, message: (0, i18n_1.localize)(params.locale, "凭证验证会将用户编号和 API Key 发送至 550W，并保存到本机专用配置文件。请取得用户对验证和保存的同意后传入 confirmCredentialStorage=true；共享宿主建议使用环境凭据或 OAuth。", "Credential verification sends your user ID and API key to 550W and saves them in a dedicated local configuration file. Obtain consent for verification and storage before setting confirmCredentialStorage=true; prefer environment credentials or OAuth on shared hosts.") };
+        }
         const validationError = (0, validator_1.validateCredential)(params.userNo, params.apiKey, params.locale);
         if (validationError)
             return validationError;

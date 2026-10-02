@@ -1412,6 +1412,9 @@ var require_dispatcher = __commonJS({
       const credentialManager = new credential_manager_1.CredentialManager();
       if (request.action === "configureCredentials") {
         const params = request.params || {};
+        if (params.confirmCredentialStorage !== true) {
+          return { code: types_1.ErrorCode.INVALID_PARAMS, message: (0, i18n_12.localize)(params.locale, "\u51ED\u8BC1\u9A8C\u8BC1\u4F1A\u5C06\u7528\u6237\u7F16\u53F7\u548C API Key \u53D1\u9001\u81F3 550W\uFF0C\u5E76\u4FDD\u5B58\u5230\u672C\u673A\u4E13\u7528\u914D\u7F6E\u6587\u4EF6\u3002\u8BF7\u53D6\u5F97\u7528\u6237\u5BF9\u9A8C\u8BC1\u548C\u4FDD\u5B58\u7684\u540C\u610F\u540E\u4F20\u5165 confirmCredentialStorage=true\uFF1B\u5171\u4EAB\u5BBF\u4E3B\u5EFA\u8BAE\u4F7F\u7528\u73AF\u5883\u51ED\u636E\u6216 OAuth\u3002", "Credential verification sends your user ID and API key to 550W and saves them in a dedicated local configuration file. Obtain consent for verification and storage before setting confirmCredentialStorage=true; prefer environment credentials or OAuth on shared hosts.") };
+        }
         const validationError = (0, validator_1.validateCredential)(params.userNo, params.apiKey, params.locale);
         if (validationError)
           return validationError;

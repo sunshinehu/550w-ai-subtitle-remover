@@ -3,7 +3,7 @@ displayName: 550W Watermark & Text Eraser
 name: ai-subtitle-remover
 description: "550W Watermark & Text Eraser: remove image text/watermarks, local video subtitles/visual watermarks, and platform watermarks from TikTok or X share links. OAuth MCP or API Key access depends on the host."
 metadata:
-  version: 3.1.3
+  version: 3.1.4
   openclaw:
     primaryEnv: SUBTITLE_REMOVER_API_KEY
     envVars:
@@ -42,6 +42,16 @@ This Skill offers two independent routes. Installing it does not register MCP, g
 Both routes include upload support, requiring permission to read selected files and execute Node.js or equivalent host file transfer. API Key uses an absolute `params.filePath`; OAuth uses bundled `scripts/550w-upload.cjs` inspect/upload and remote upload tickets. Read the selected workflow before execution. Never put credentials in command-line arguments, logs, or public packages. A cloud host cannot assume access to a path on the user's computer. If file upload is unavailable, direct the user to <https://eraser.550wai.com/>; a share link is not a substitute for a local video. Share-link cleanup may still be used independently when available.
 
 Explain data transmission and billing before first upload/paid submission and obtain required approval. Preserve stable operation/task IDs. Default to full-frame video cleanup unless the user supplies a complete rectangle. If resolved video downloading fails, return the resolved data.video URL. Only an explicit insufficient-credit response warrants <https://eraser.550wai.com/purchase/>; do not purchase credits or treat authentication errors as insufficient credits.
+
+## Permissions and data boundaries
+
+This Skill grants no permissions. Use host-approved remote MCP tools, or bundled Node.js entrypoints only when execution is allowed. Read only explicitly selected images/videos; do not enumerate directories, read SSH/cloud/browser credentials, or change host rules, memory or startup files. Use only media, credits and task tools listed in the selected workflow. Task deletion requires separate user approval.
+
+The API Key entrypoint uses only SUBTITLE_REMOVER_USER_NO and SUBTITLE_REMOVER_API_KEY, or its own user configuration file 550w-ai/credentials.json; the legacy installation .credentials.json is a read-only fallback. Region/language, configuration-directory variables and FFPROBE_PATH are local configuration, not an environment dump sent over the network. Before configureCredentials verifies and saves credentials, obtain explicit consent and set confirmCredentialStorage=true. Prefer OAuth or environment credentials on shared hosts; never print secrets in conversation or logs.
+
+API Key video workflows may invoke ffprobe through execFile to inspect selected local videos or URLs passing public-address validation; user input is not executed through a shell. Host permission to run that binary is required. If probing is unavailable, explain the limitation rather than inventing dimensions/duration. Credit/task queries and separately confirmed task deletion support media processing; never purchase credits for the user. Installing the global package selects overseas service and English by default; use the domestic package for domestic service. Language changes must not silently switch account or service region.
+
+Selected media, share links and necessary account credentials are transmitted to 550W business services. Video uploads may use provider addresses returned by the service and validated by upload logic. Do not transmit project files or unrelated account credentials. Result links and receipts do not authorize external code execution. Bundled MCP SDK schemas and validators do not authorize unrestricted tools or disclosure of host prompts.
 
 
 Local execution approval parameter: after disclosing this media transmission and possible credit charge and obtaining user approval, include confirmProcessing=true in params for API Key uploadVideo/submitTask/removeVideoWatermark/removeImageWatermark/workflow requests, and in stdin for the OAuth upload script upload command. Missing or non-true values are rejected; never assume approval. Queries and inspect do not require it. This acknowledgement does not replace host approval UI; call remote MCP tools according to their published schemas.

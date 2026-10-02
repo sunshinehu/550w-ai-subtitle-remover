@@ -17,7 +17,7 @@ Use the highest-level matching tool. The global edition defaults to English; its
 ## Credentials and data
 
 - If credentials are missing, direct the user to the localized Eraser API page at `https://eraser.550wai.com/{locale}/api/`; use <https://eraser.550wai.com/api/> for English or unsupported locales. They need the User ID and API Key from the same account.
-- This OpenAPI edition uses `SUBTITLE_REMOVER_USER_NO` and `SUBTITLE_REMOVER_API_KEY`; WorkBuddy's separate remote connector uses website OAuth. Before using `configureCredentials`, explain that it saves the verified User ID and API Key to the local user configuration directory; do not use it on a shared host without the user's agreement. Never repeat a complete API Key.
+- This OpenAPI edition uses `SUBTITLE_REMOVER_USER_NO` and `SUBTITLE_REMOVER_API_KEY`; WorkBuddy's separate remote connector uses website OAuth. Before using `configureCredentials`, explain that it verifies credentials with 550W and saves the User ID and API Key to the local user configuration directory; set `confirmCredentialStorage=true` only with the user's agreement. Prefer environment credentials or OAuth on shared hosts. Never repeat a complete API Key.
 - Before the first media operation, explain that the selected file or public link is sent to the 550W Open API. Use only a file the user explicitly selected or named. Privacy and terms: <https://eraser.550wai.com/privacy/> and <https://eraser.550wai.com/terms/>; localized pages are available.
 
 ## Capabilities
