@@ -1,16 +1,16 @@
 identity:
   name: subtitle_task_detail
   author: sunshinehu
-  label: {en_US: Check subtitle task, zh_Hans: 查询去字幕任务}
+  label: {en_US: "Check subtitle task", zh_Hans: "查询去字幕任务", ja_JP: "字幕除去タスクを確認", pt_BR: "Consultar tarefa de remoção de legendas"}
 description:
-  human: {en_US: Check subtitle-removal task status and result URL., zh_Hans: 查询去字幕任务状态和结果链接。}
+  human: {en_US: "Check subtitle-removal task status and result URL.", zh_Hans: "查询去字幕任务状态和结果链接。", ja_JP: "字幕除去タスクの状態と結果URLを確認します。", pt_BR: "Consulte o status e a URL do resultado da tarefa de remoção de legendas."}
   llm: Check a previously submitted subtitle-removal task by task ID; no new processing task is created.
 parameters:
   - name: taskId
     type: string
     required: true
-    label: {en_US: Task ID, zh_Hans: 任务编号}
-    human_description: {en_US: ID returned by task submission, zh_Hans: 提交任务时返回的编号}
+    label: {en_US: "Task ID", zh_Hans: "任务编号", ja_JP: "タスクID", pt_BR: "ID da tarefa"}
+    human_description: {en_US: "ID returned by task submission", zh_Hans: "提交任务时返回的编号", ja_JP: "タスク送信時に返されたID", pt_BR: "ID retornado pelo envio da tarefa"}
     llm_description: Existing subtitle-removal task ID.
     form: llm
 extra:

@@ -1,0 +1,104 @@
+identity:
+  name: estimate_media_cost
+  author: sunshinehu
+  label:
+    en_US: Estimate processing credits
+    zh_Hans: 预估处理积分
+    ja_JP: 処理クレジットを見積もる
+    pt_BR: Estimar créditos de processamento
+description:
+  human:
+    en_US: Read-only OAuth quote before processing. No upload or credit charge.
+    zh_Hans: 处理前查询OAuth报价，不上传、不扣积分。
+    ja_JP: 処理前のOAuth見積もり。アップロードや課金は行いません。
+    pt_BR: Consulte a estimativa OAuth antes de processar, sem upload ou cobrança.
+  llm: 'OAuth only. Quote image, video or share before user fee confirmation. Video
+    metadata must come from the actual file; never guess. Check code/status, processingEnabled,
+    submissionAuthorized and canSubmit before submitting. needs_input is not free:
+    probe actual media or show fallbackUrl. On insufficient credits show service purchaseRecoveryUrl
+    and same-account guidance, then query balance and original operation after return.
+    401 reconnect same account; 403 check scopes; do not buy credits for auth failures.
+    API Key workflows receive explicit pricing-page fallback, not a fabricated quote.'
+parameters:
+- name: mediaType
+  type: string
+  required: true
+  label:
+    en_US: Media type
+    zh_Hans: 处理类型
+    ja_JP: メディア種別
+    pt_BR: Tipo de mídia
+  human_description:
+    en_US: image / video / share
+    zh_Hans: image / video / share
+    ja_JP: image / video / share
+    pt_BR: image / video / share
+  llm_description: image, video or share
+  form: llm
+- name: width
+  type: number
+  required: false
+  label:
+    en_US: Width (pixels)
+    zh_Hans: 宽度（像素）
+    ja_JP: 幅（ピクセル）
+    pt_BR: Largura (pixels)
+  human_description:
+    en_US: Use actual media metadata; never guess.
+    zh_Hans: 使用素材真实元数据，不得猜测。
+    ja_JP: 実際のメディア情報を使用し、推測しないでください。
+    pt_BR: Use os metadados reais da mídia; não estime.
+  llm_description: Optional positive integer from actual file metadata; never guess.
+    durationSeconds uses rounded-up seconds, maximum 600.
+  form: llm
+- name: height
+  type: number
+  required: false
+  label:
+    en_US: Height (pixels)
+    zh_Hans: 高度（像素）
+    ja_JP: 高さ（ピクセル）
+    pt_BR: Altura (pixels)
+  human_description:
+    en_US: Use actual media metadata; never guess.
+    zh_Hans: 使用素材真实元数据，不得猜测。
+    ja_JP: 実際のメディア情報を使用し、推測しないでください。
+    pt_BR: Use os metadados reais da mídia; não estime.
+  llm_description: Optional positive integer from actual file metadata; never guess.
+    durationSeconds uses rounded-up seconds, maximum 600.
+  form: llm
+- name: durationSeconds
+  type: number
+  required: false
+  label:
+    en_US: Duration (seconds)
+    zh_Hans: 时长（秒）
+    ja_JP: 長さ（秒）
+    pt_BR: Duração (segundos)
+  human_description:
+    en_US: Use actual media metadata; never guess.
+    zh_Hans: 使用素材真实元数据，不得猜测。
+    ja_JP: 実際のメディア情報を使用し、推測しないでください。
+    pt_BR: Use os metadados reais da mídia; não estime.
+  llm_description: Optional positive integer from actual file metadata; never guess.
+    durationSeconds uses rounded-up seconds, maximum 600.
+  form: llm
+- name: fileSizeBytes
+  type: number
+  required: false
+  label:
+    en_US: File size (bytes)
+    zh_Hans: 文件大小（字节）
+    ja_JP: ファイルサイズ（バイト）
+    pt_BR: Tamanho do arquivo (bytes)
+  human_description:
+    en_US: Use actual media metadata; never guess.
+    zh_Hans: 使用素材真实元数据，不得猜测。
+    ja_JP: 実際のメディア情報を使用し、推測しないでください。
+    pt_BR: Use os metadados reais da mídia; não estime.
+  llm_description: Optional positive integer from actual file metadata; never guess.
+    durationSeconds uses rounded-up seconds, maximum 600.
+  form: llm
+extra:
+  python:
+    source: tools/estimate-media-cost.py

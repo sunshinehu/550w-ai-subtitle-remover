@@ -18,6 +18,16 @@ CREDENTIALS = {"access_token": "limited-test-token", "region": "global"}
 
 
 class OAuthTests(unittest.TestCase):
+    def test_token_response_region_and_type_are_validated(self):
+        valid = {"access_token": "access", "refresh_token": "refresh", "expires_in": 900}
+        oauth._credentials(valid, "client")
+        oauth._credentials({**valid, "resource": oauth.RESOURCE, "token_type": "Bearer"}, "client")
+        for extra in ({"resource": "https://attacker.example"}, {"resource": None},
+                      {"resource": "https://www.550wai.cn/media-api/cn"},
+                      {"token_type": "Basic"}, {"token_type": None}):
+            with self.assertRaises(ValueError):
+                oauth._credentials({**valid, **extra}, "client")
+
     def authorize(self):
         with patch("tools.oauth._post", return_value={"client_id": "public-client"}):
             return parse_qs(urlparse(oauth.authorization_url(CALLBACK, SETTINGS)).query)
@@ -68,7 +78,7 @@ class OAuthTests(unittest.TestCase):
     def test_oauth_account_never_uses_legacy_credentials(self, http):
         call_api({**CREDENTIALS, "apiKey": "legacy", "userNo": "legacy"}, "/open/queryCredits", {})
         self.assertEqual(http.call_args.args, ("get", "https://www.550wai.cn/media-api/global/v1/account"))
-        self.assertEqual(http.call_args.kwargs["headers"], {"Authorization": "Bearer limited-test-token"})
+        self.assertEqual(http.call_args.kwargs["headers"], {"Authorization": "Bearer limited-test-token", "X-550W-Product": "plugin-dify"})
         self.assertNotIn("data", http.call_args.kwargs)
 
     @patch("tools.api.http_json", return_value={"code": 200, "status": "accepted"})

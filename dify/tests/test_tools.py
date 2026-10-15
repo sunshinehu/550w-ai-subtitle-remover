@@ -23,6 +23,50 @@ class ToolTests(unittest.TestCase):
         tool.create_json_message = lambda result: result
         return tool
 
+    def test_quote_only_calls_quote_and_preserves_business_guidance(self):
+        module = load_tool("estimate-media-cost")
+        tool = self.new_tool(module.EstimateMediaCostTool)
+        tool.runtime.credentials = {"access_token": "token", "region": "global"}
+        outcome = {"code": 200, "canSubmit": False, "purchaseRecoveryUrl": "https://eraser.550wai.com/purchase/?source=agent"}
+        with patch.object(module, "http_json", return_value=outcome) as quote:
+            result = list(tool._invoke({"mediaType": "video", "width": 1920, "height": 1080, "durationSeconds": 10}))[0]
+        self.assertEqual(result, outcome)
+        self.assertTrue(quote.call_args.args[1].endswith("/global/v1/quote"))
+        self.assertEqual(quote.call_args.kwargs["json"]["durationSeconds"], 10)
+        quote.assert_called_once()
+
+    def test_quote_missing_metadata_is_sent_without_inventing_a_price(self):
+        module = load_tool("estimate-media-cost")
+        tool = self.new_tool(module.EstimateMediaCostTool)
+        tool.runtime.credentials = {"access_token": "token", "region": "global"}
+        outcome = {"code": 422, "status": "needs_input", "missingFields": ["width", "height", "durationSeconds"]}
+        with patch.object(module, "http_json", return_value=outcome) as quote:
+            result = list(tool._invoke({"mediaType": "video"}))[0]
+        self.assertEqual(result, outcome)
+        self.assertEqual(quote.call_args.kwargs["json"], {"mediaType": "video"})
+        self.assertNotIn("estimatedCredits", result)
+
+    def test_quote_rejects_invalid_metadata_before_network(self):
+        module = load_tool("estimate-media-cost")
+        tool = self.new_tool(module.EstimateMediaCostTool)
+        tool.runtime.credentials = {"access_token": "token", "region": "global"}
+        for key, value in [("width", True), ("height", 0), ("durationSeconds", 601), ("fileSizeBytes", 1.5)]:
+            with self.subTest(key=key), patch.object(module, "http_json") as quote:
+                result = list(tool._invoke({"mediaType": "video", key: value}))[0]
+                self.assertEqual(result["code"], -200)
+                quote.assert_not_called()
+
+    def test_quote_api_key_mode_never_silently_registers_or_submits(self):
+        module = load_tool("estimate-media-cost")
+        tool = self.new_tool(module.EstimateMediaCostTool)
+        with patch.object(module, "http_json") as quote:
+            result = list(tool._invoke({"mediaType": "image"}))[0]
+        self.assertEqual(result["status"], "unsupported_auth_mode")
+        self.assertFalse(result["automaticRetryAllowed"])
+        self.assertIn("eraser.550wai.com/api", result["fallbackUrl"])
+        self.assertNotIn("estimatedCredits", result)
+        quote.assert_not_called()
+
     def test_image_tool_uploads_selected_file_with_stable_id(self):
         module = load_tool("remove-image-watermark")
         tool = self.new_tool(module.RemoveImageWatermarkTool)

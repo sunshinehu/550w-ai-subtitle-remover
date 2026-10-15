@@ -117,6 +117,12 @@ def refresh(credentials):
 
 
 def _credentials(result, client_id, previous_refresh=None):
+    # Optional extension fields remain optional for legacy responses, but must
+    # never override the explicitly selected regional Bearer connection.
+    if ("token_type" in result and (not isinstance(result["token_type"], str)
+            or result["token_type"].lower() != "bearer")) or \
+            ("resource" in result and result["resource"] != RESOURCE):
+        raise ValueError("OAuth token type or resource does not match this connection")
     access = result.get("access_token")
     refresh_token = result.get("refresh_token") or previous_refresh
     expires = result.get("expires_in")

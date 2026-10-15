@@ -1,11 +1,13 @@
 import pathlib
 import sys
 import unittest
+import requests
 from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from tools.api import call_api, call_upload, require_token, require_url
+from tools.api import call_api, call_upload, require_token, require_url, _read_json_response, http_json
+from unittest.mock import MagicMock
 
 
 class SelectedFile:
@@ -17,6 +19,102 @@ class SelectedFile:
 
 
 class ApiTests(unittest.TestCase):
+    def test_auth_failures_keep_reconnection_action_without_purchase_guidance(self):
+        for status, action in [(401, "RECONNECT_SAME_ACCOUNT"), (403, "REAUTHORIZE_REQUIRED_SCOPES")]:
+            with self.subTest(status=status):
+                response = MagicMock()
+                response.status_code = status
+                response.raise_for_status.side_effect = AssertionError("Must preserve auth outcome")
+                result = _read_json_response(response)
+                self.assertEqual(result["code"], status)
+                self.assertEqual(result["nextAction"], action)
+                self.assertFalse(result["automaticRetryAllowed"])
+                self.assertNotIn("purchaseUrl", result)
+                self.assertNotIn("purchaseRecoveryUrl", result)
+                response.iter_content.assert_not_called()
+                response.__exit__.assert_called_once()
+
+    def test_unsupported_share_explains_regional_platforms_without_purchase(self):
+        import json
+        for region, expected in [("cn", "Douyin"), ("global", "TikTok")]:
+            response = MagicMock()
+            response.status_code = 400
+            response.headers = {"Content-Type": "application/json"}
+            response.iter_content.return_value = [json.dumps({"code":400,"errorCode":"SHARE_URL_UNSUPPORTED"}).encode()]
+            with patch("tools.api.REGION", region):
+                result = _read_json_response(response)
+            self.assertIn(expected, result["message"])
+            self.assertEqual(result["nextAction"], "PROVIDE_SUPPORTED_SHARE_LINK")
+            self.assertFalse(result["automaticRetryAllowed"])
+            self.assertNotIn("purchaseUrl", result)
+
+    def test_structured_business_errors_preserve_recovery_without_retry(self):
+        import json
+        for status in (400, 402, 409, 422, 429):
+            response = MagicMock()
+            response.status_code = status
+            response.headers = {"Content-Type": "application/json"}
+            payload = {"code": status, "errorCode": "INSUFFICIENT_CREDITS",
+                       "purchaseRecoveryUrl": "https://eraser.550wai.com/purchase/?source=agent&agent=dify",
+                       "accountLabel": "****0000", "canSubmit": False}
+            response.iter_content.return_value = [json.dumps(payload).encode()]
+            result = _read_json_response(response)
+            self.assertEqual(result["purchaseRecoveryUrl"], payload["purchaseRecoveryUrl"])
+            self.assertFalse(result["automaticRetryAllowed"])
+            response.raise_for_status.assert_not_called()
+
+    @patch("tools.api.requests.post", side_effect=requests.Timeout("private transport detail"))
+    def test_oauth_submission_timeout_preserves_generated_operation(self, post):
+        with patch("tools.api.uuid.uuid4") as generated:
+            generated.return_value.hex = "generated-operation-123"
+            result = call_api({"access_token": "token", "region": "global"},
+                              "/open/removeVideoWatermark", {"videoUrl": "https://example.com/share"})
+        self.assertEqual(result["operationId"], post.call_args.kwargs["json"]["operationId"])
+        self.assertEqual(result["operationId"], "generated-operation-123")
+        self.assertEqual(result["status"], "unknown")
+        self.assertEqual(result["nextAction"], "CHECK_ORIGINAL_OPERATION")
+        self.assertFalse(result["automaticRetryAllowed"])
+        self.assertNotIn("private transport detail", str(result))
+        self.assertNotIn("purchaseUrl", result)
+        post.assert_called_once()
+
+    @patch("tools.api.requests.post", side_effect=requests.ConnectionError("lost response"))
+    def test_oauth_upload_timeout_preserves_supplied_operation(self, post):
+        result = call_upload({"access_token": "token", "region": "global"},
+                             "/open/removeImageWatermark", SelectedFile("picture.png", b"image"),
+                             {"operationId": "existing-operation-123"})
+        self.assertEqual(result["operationId"], "existing-operation-123")
+        self.assertEqual(result["code"], -201)
+        self.assertFalse(result["automaticRetryAllowed"])
+        post.assert_called_once()
+        self.assertTrue(post.call_args.kwargs["data"].fields["file"][1].closed)
+
+    @patch("tools.api.requests.post", side_effect=requests.Timeout("timeout"))
+    def test_oauth_submission_timeout_keeps_caller_id_without_retry(self, post):
+        result = call_api({"access_token": "token", "region": "global"},
+                          "/open/submitTask", {"videoUrl": "https://example.com/video.mp4",
+                                                "idempotencyKey": "caller-operation-123"})
+        self.assertEqual(result["operationId"], "caller-operation-123")
+        self.assertEqual(result["operationId"], post.call_args.kwargs["json"]["operationId"])
+        self.assertFalse(result["automaticRetryAllowed"])
+        post.assert_called_once()
+
+    @patch("tools.api.requests.post")
+    def test_oauth_auth_rejection_is_not_mislabeled_as_unknown_submission(self, post):
+        post.return_value.status_code = 401
+        result = call_api({"access_token": "token", "region": "global"},
+                          "/open/removeVideoWatermark", {"videoUrl": "https://example.com/share"})
+        self.assertEqual(result["code"], 401)
+        self.assertEqual(result["nextAction"], "RECONNECT_SAME_ACCOUNT")
+        self.assertNotIn("operationId", result)
+        post.assert_called_once()
+
+    @patch("tools.api.requests.get", side_effect=requests.Timeout("read failed"))
+    def test_read_timeout_does_not_claim_unknown_submission(self, get):
+        with self.assertRaisesRegex(ValueError, "check the existing operation"):
+            http_json("get", "https://www.550wai.cn/media-api/global/v1/account")
+        get.assert_called_once()
+
     def test_extracts_share_link(self):
         self.assertEqual(require_url("Watch https://www.tiktok.com/@user/video/123！"),
                          "https://www.tiktok.com/@user/video/123")
