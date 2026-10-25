@@ -3,10 +3,14 @@ identity:
   author: sunshinehu
   label:
     en_US: Remove short-video watermark
+    ja_JP: "共有動画のプラットフォーム透かしを除去"
+    pt_BR: "Remover marca d’água de vídeo compartilhado"
     zh_Hans: 短视频去水印
 description:
   human:
     en_US: Resolve a public video share link from Douyin, Kuaishou, Bilibili, Weibo or another supported platform.
+    ja_JP: "TikTokなどの対応アプリでコピーした公開動画の共有リンクを使用します。成功した結果1件につき1クレジットが必要です。"
+    pt_BR: "Use um link público de compartilhamento de vídeo copiado no TikTok ou em outro aplicativo compatível. Cada resultado bem-sucedido custa um crédito."
     zh_Hans: 从抖音、快手、哔哩哔哩、微博等受支持 App 或平台网站，通过分享操作复制视频或内容分享链接，去除平台水印。支持情况以解析结果为准。
   llm: Resolve a public short-video share link copied inside the app. If downloading the resolved data.video URL fails or times out, give that resolved URL to the user for browser download, not the original share link. Do not invent a URL or retry after an uncertain paid call.
 parameters:
@@ -15,9 +19,13 @@ parameters:
     required: true
     label:
       en_US: Video share link
+      ja_JP: "動画の共有リンク"
+      pt_BR: "Link de compartilhamento do vídeo"
       zh_Hans: 视频分享链接
     human_description:
       en_US: Public HTTP(S) link or copied share text containing one link.
+      ja_JP: "公開HTTP(S)リンク、またはリンクを1つ含む共有テキスト。"
+      pt_BR: "Link público HTTP(S) ou texto de compartilhamento contendo um único link."
       zh_Hans: 包含一个 HTTP(S) 链接的公开分享链接或分享文本。
     llm_description: Public video share URL copied inside the social app; Douyin, Kuaishou, Bilibili, Weibo and other supported platforms.
     form: llm
@@ -26,9 +34,13 @@ parameters:
     required: false
     label:
       en_US: Operation ID
+      ja_JP: "操作ID"
+      pt_BR: "ID da operação"
       zh_Hans: 操作编号
     human_description:
       en_US: Optional stable ID for this same URL, 8–64 safe characters.
+      ja_JP: "同じURLに使用する任意の固定ID（8～64文字）。"
+      pt_BR: "ID estável opcional para a mesma URL, com 8 a 64 caracteres permitidos."
       zh_Hans: 同一链接可复用的编号，8–64 位安全字符。
     llm_description: Optional 8–64 character idempotency ID. Reuse only for the identical URL.
     form: form

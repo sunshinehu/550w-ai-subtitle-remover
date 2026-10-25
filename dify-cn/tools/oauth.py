@@ -14,7 +14,7 @@ from urllib.parse import urlencode, urlparse
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from tools.api import BASE_URL
-from tools.region import REGION
+from tools.region import REGION, VERSION
 import requests
 
 SCOPE = "credits:read tasks:read tasks:submit media:upload"
@@ -40,6 +40,7 @@ def _post(path, payload):
     try:
         with requests.post(BASE_URL + path, json=payload if path.endswith("register") else None,
                            data=None if path.endswith("register") else payload,
+                           headers={"X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION},
                            timeout=(10, 30), allow_redirects=False, stream=True) as response:
             if response.status_code != 200 and not (path.endswith("register") and response.status_code == 201):
                 raise ValueError("550W OAuth request rejected; check client configuration or reconnect")
@@ -117,6 +118,12 @@ def refresh(credentials):
 
 
 def _credentials(result, client_id, previous_refresh=None):
+    # Optional extension fields remain optional for legacy responses, but must
+    # never override the explicitly selected regional Bearer connection.
+    if ("token_type" in result and (not isinstance(result["token_type"], str)
+            or result["token_type"].lower() != "bearer")) or \
+            ("resource" in result and result["resource"] != RESOURCE):
+        raise ValueError("OAuth token type or resource does not match this connection")
     access = result.get("access_token")
     refresh_token = result.get("refresh_token") or previous_refresh
     expires = result.get("expires_in")

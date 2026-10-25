@@ -3,10 +3,14 @@ identity:
   author: sunshinehu
   label:
     en_US: Check credits
+    ja_JP: "クレジットを確認"
+    pt_BR: "Consultar créditos"
     zh_Hans: 查询积分
 description:
   human:
     en_US: Check the current 550W account credit balance.
+    ja_JP: "550Wアカウントの現在のクレジット残高を確認します。"
+    pt_BR: "Consulte o saldo atual de créditos da conta 550W."
     zh_Hans: 查询 550W 账户当前积分余额。
   llm: Check the current 550W credit balance without creating a task.
 parameters: []

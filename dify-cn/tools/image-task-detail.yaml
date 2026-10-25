@@ -3,18 +3,22 @@ identity:
   author: sunshinehu
   label:
     en_US: Check image removal task
+    ja_JP: "画像処理タスクを確認"
+    pt_BR: "Consultar tarefa de remoção em imagem"
     zh_Hans: 查询图片去水印任务
 description:
   human:
     en_US: Check the status and result of an image watermark removal task.
+    ja_JP: "画像の透かし除去タスクの状態と結果を確認します。"
+    pt_BR: "Consulte o status e o resultado de uma tarefa de remoção de marca d’água em imagem."
     zh_Hans: 查询图片去水印任务状态和结果。
   llm: Use the task ID from the image upload result. Only report completion when the service returns a successful status and result URL.
 parameters:
   - name: taskId
     type: string
     required: true
-    label: {en_US: Task ID, zh_Hans: 任务 ID}
-    human_description: {en_US: ID returned by image upload, zh_Hans: 图片上传返回的任务 ID}
+    label: {en_US: "Task ID", zh_Hans: "任务 ID", ja_JP: "タスクID", pt_BR: "ID da tarefa"}
+    human_description: {en_US: "ID returned by image upload", zh_Hans: "图片上传返回的任务 ID", ja_JP: "画像アップロード時に返されたID", pt_BR: "ID retornado pelo envio da imagem"}
     llm_description: Exact returned image task ID.
     form: llm
 extra:

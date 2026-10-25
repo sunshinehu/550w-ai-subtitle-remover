@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from tools.region import REGION, API_KEY_URL
+from tools.region import REGION, API_KEY_URL, VERSION
 
 BASE_URL = "https://www.550wai.cn"
 ALLOWED_ENDPOINTS = frozenset({
@@ -66,7 +66,7 @@ def call_api(credentials: dict[str, Any], endpoint: str, params: dict[str, Any],
         response = requests.post(
             BASE_URL + endpoint,
             data={"userNo": user_no, "apiKey": api_key, **params},
-            headers={"X-550W-Product": "plugin-dify"},
+            headers={"X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION},
             timeout=(10, timeout), allow_redirects=False, stream=True,
         )
         return _read_json_response(response)
@@ -141,7 +141,7 @@ def call_upload(credentials: dict[str, Any], endpoint: str, uploaded: Any,
                 headers = {}
             form = MultipartEncoder(fields={**fields, "file": (filename, staged, mime)})
             response = requests.post(root + "/media" if oauth else BASE_URL + endpoint,
-                data=form, headers={**headers, "X-550W-Product": "plugin-dify", "Content-Type": form.content_type}, timeout=(10, timeout),
+                data=form, headers={**headers, "X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION, "Content-Type": form.content_type}, timeout=(10, timeout),
                 allow_redirects=False, stream=True)
             return _read_json_response(response)
     except requests.RequestException as exc:
@@ -202,7 +202,7 @@ def oauth_target(credentials):
     token = credentials.get("access_token")
     if credentials.get("region") != REGION or not isinstance(token, str) or not token or "\r" in token or "\n" in token:
         raise ValueError("Reconnect OAuth to this regional provider")
-    return f"{BASE_URL}/media-api/{REGION}/v1", {"Authorization": "Bearer " + token, "X-550W-Product": "plugin-dify"}
+    return f"{BASE_URL}/media-api/{REGION}/v1", {"Authorization": "Bearer " + token, "X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION}
 
 
 def uncertain_operation(operation_id: str) -> dict[str, Any]:

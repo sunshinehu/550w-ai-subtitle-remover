@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from tools.region import REGION, API_KEY_URL
+from tools.region import REGION, API_KEY_URL, VERSION
 
 BASE_URL = "https://www.550wai.cn"
 ALLOWED_ENDPOINTS = frozenset({
@@ -57,7 +57,7 @@ def call_api(credentials: dict[str, Any], endpoint: str, params: dict[str, Any],
         return http_json("post", root + "/media", headers=headers, json={
             "operationId": operation, "mediaType": "share" if endpoint == "/open/removeVideoWatermark" else "video",
             "sourceUrl": require_url(params.get("videoUrl")),
-        }, timeout=timeout)
+        }, timeout=timeout, operation_id=operation)
     user_no = credentials.get("userNo")
     api_key = credentials.get("apiKey")
     if not user_no or not api_key:
@@ -66,6 +66,7 @@ def call_api(credentials: dict[str, Any], endpoint: str, params: dict[str, Any],
         response = requests.post(
             BASE_URL + endpoint,
             data={"userNo": user_no, "apiKey": api_key, **params},
+            headers={"X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION},
             timeout=(10, timeout), allow_redirects=False, stream=True,
         )
         return _read_json_response(response)
@@ -95,6 +96,7 @@ def call_upload(credentials: dict[str, Any], endpoint: str, uploaded: Any,
     declared_size = getattr(uploaded, "size", None)
     if isinstance(declared_size, (int, float)) and declared_size > max_size:
         raise ValueError("Selected file exceeds the upload limit")
+    operation = None
     try:
         with tempfile.TemporaryFile() as staged:
             if image:
@@ -139,10 +141,12 @@ def call_upload(credentials: dict[str, Any], endpoint: str, uploaded: Any,
                 headers = {}
             form = MultipartEncoder(fields={**fields, "file": (filename, staged, mime)})
             response = requests.post(root + "/media" if oauth else BASE_URL + endpoint,
-                data=form, headers={**headers, "Content-Type": form.content_type}, timeout=(10, timeout),
+                data=form, headers={**headers, "X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION, "Content-Type": form.content_type}, timeout=(10, timeout),
                 allow_redirects=False, stream=True)
             return _read_json_response(response)
     except requests.RequestException as exc:
+        if oauth and operation is not None:
+            return uncertain_operation(operation)
         raise ValueError("550W upload failed; check the existing task before retrying") from exc
     except OSError as exc:
         raise ValueError("Temporary storage is unavailable or full; retry on a host with enough free disk space") from exc
@@ -152,7 +156,27 @@ def _read_json_response(response: requests.Response) -> dict[str, Any]:
     with response:
         if 300 <= response.status_code < 400:
             raise ValueError("API redirects are not allowed")
-        response.raise_for_status()
+        if response.status_code in (401, 403):
+            expired = response.status_code == 401
+            return {
+                "code": response.status_code,
+                "status": "unauthorized" if expired else "forbidden",
+                "errorCode": "AUTHORIZATION_REQUIRED" if expired else "INSUFFICIENT_SCOPE",
+                "nextAction": "RECONNECT_SAME_ACCOUNT" if expired else "REAUTHORIZE_REQUIRED_SCOPES",
+                "automaticRetryAllowed": False,
+                "message": (
+                    "Reconnect the same regional 550W account, or check the API key for that account. "
+                    "Authorization failed; do not buy credits or retry a paid action automatically."
+                    if expired else
+                    "Check the required authorization scopes or account permissions. "
+                    "Access was denied; do not buy credits or switch accounts automatically."
+                ),
+            }
+        # Preserve bounded structured business errors (pricing, limits, recovery).
+        # Authentication remains handled above; transport/server failures remain errors.
+        business_error = response.status_code in (400, 402, 409, 422, 429)
+        if not business_error:
+            response.raise_for_status()
         if not response.headers.get("Content-Type", "").lower().startswith("application/json"):
             raise ValueError("The service returned a non-JSON response")
         chunks, total = [], 0
@@ -164,6 +188,13 @@ def _read_json_response(response: requests.Response) -> dict[str, Any]:
         result = json.loads(b"".join(chunks))
     if not isinstance(result, dict) or not isinstance(result.get("code"), int):
         raise ValueError("The service returned an invalid response")
+    if business_error:
+        result["automaticRetryAllowed"] = False
+        if result.get("errorCode") == "SHARE_URL_UNSUPPORTED" and not result.get("message"):
+            supported = "Douyin, Kuaishou, Bilibili or Weibo" if REGION == "cn" else "TikTok, X or Twitter"
+            result["message"] = (f"This regional connection supports public share links from {supported}. "
+                                 "Use a supported link; do not switch accounts or retry this link automatically.")
+            result["nextAction"] = "PROVIDE_SUPPORTED_SHARE_LINK"
     return result
 
 
@@ -171,12 +202,33 @@ def oauth_target(credentials):
     token = credentials.get("access_token")
     if credentials.get("region") != REGION or not isinstance(token, str) or not token or "\r" in token or "\n" in token:
         raise ValueError("Reconnect OAuth to this regional provider")
-    return f"{BASE_URL}/media-api/{REGION}/v1", {"Authorization": "Bearer " + token}
+    return f"{BASE_URL}/media-api/{REGION}/v1", {"Authorization": "Bearer " + token, "X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION}
 
 
-def http_json(method, url, *, timeout=30, **kwargs):
+def uncertain_operation(operation_id: str) -> dict[str, Any]:
+    """Local transport outcome, never a claim that the service accepted a task."""
+    return {
+        "code": -201,
+        "status": "unknown",
+        "errorCode": "SUBMISSION_OUTCOME_UNKNOWN",
+        "operationId": operation_id,
+        "region": REGION,
+        "nextAction": "CHECK_ORIGINAL_OPERATION",
+        "automaticRetryAllowed": False,
+        "message": (
+            "The submission response was not received. Use Check OAuth operation with this "
+            "operationId on the same account before continuing. Do not create a new operation, "
+            "resubmit processing, or buy credits based on this transport error. "
+            "An unknown or not-found lookup is not permission to submit again."
+        ),
+    }
+
+
+def http_json(method, url, *, timeout=30, operation_id=None, **kwargs):
     try:
         response = getattr(requests, method)(url, timeout=(10, timeout), allow_redirects=False, stream=True, **kwargs)
         return _read_json_response(response)
     except requests.RequestException as exc:
+        if operation_id is not None:
+            return uncertain_operation(operation_id)
         raise ValueError("550W HTTP request failed; reconnect if authorization expired, and check the existing operation before retrying") from exc

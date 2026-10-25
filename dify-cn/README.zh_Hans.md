@@ -18,6 +18,8 @@ OAuth operations use the shared 550W OAuth + HTTP media API with S256 PKCE, not 
 
 ## Tools
 
+- **Estimate processing credits** requests a read-only OAuth quote for image, video or share processing. Use real video width, height and rounded-up seconds. Missing metadata is returned as needs_input, never a zero-cost quote. Check service availability, submission permission and canSubmit, then obtain user fee confirmation before submitting. API Key workflows get an explicit regional API pricing-page fallback without changing accounts.
+
 - **Remove image watermark** accepts a user-selected PNG, JPEG or WebP image (up to 50 MB), uploads it to 550W and returns the task/result. **Check image task** follows a pending image task.
 - **Submit local video** accepts a user-selected MP4/MOV video (up to the 550W service's 1 GiB limit). The adapter streams the Dify file URL to a bounded temporary file before forwarding it, rather than loading the video into plugin memory. Dify's own configured upload limit and the plugin host's free temporary disk space may be lower. The plugin uses the returned video metadata and submits a full-frame erasure task; all four user-supplied rectangle coordinates can narrow the area. A stable idempotency key is required.
 - **Check credits** reads the shared account balance without creating a task.
@@ -29,6 +31,13 @@ OAuth operations use the shared 550W OAuth + HTTP media API with S256 PKCE, not 
 Do not feed a social share page to the subtitle-task tool; use a direct video URL for that operation. Dify must provide an absolute HTTP(S) file URL reachable by its plugin runtime (`FILES_URL`/`INTERNAL_FILES_URL` on self-hosted Dify). Test a file larger than 50 MB and monitor temporary-disk use before claiming larger-video support on a particular Dify installation. An upload response or a submitted task is not proof that processing has completed; check the returned status before presenting a result.
 
 See [privacy information](PRIVACY.md) and the [service terms](https://eraser.550wai.com/terms/). Processing costs and limits are described on the API page. Dify workflows should check the returned `code` before using any result URL.
+
+OAuth submission transport failures return `code=-201`, `status=unknown`, the original
+`operationId` (including an automatically generated ID), and
+`nextAction=CHECK_ORIGINAL_OPERATION`. This is not an accepted or failed task receipt.
+Use **Check OAuth operation** on the same regional account; do not generate a new ID,
+automatically retry, or treat a not-found response as permission to submit again.
+API Key workflows retain their existing task lookup behavior.
 
 ## 国内版使用说明
 

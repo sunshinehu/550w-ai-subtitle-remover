@@ -1,16 +1,16 @@
 identity:
   name: operation_detail
   author: sunshinehu
-  label: {en_US: Check OAuth operation, zh_Hans: 查询 OAuth 操作回执}
+  label: {en_US: "Check OAuth operation", zh_Hans: "查询 OAuth 操作回执", ja_JP: "OAuth操作を確認", pt_BR: "Consultar operação OAuth"}
 description:
-  human: {en_US: Read an OAuth upload or share-link submission receipt without creating another task., zh_Hans: 查询 OAuth 上传或分享链接操作回执，不重复创建任务。}
+  human: {en_US: "Read an OAuth upload or share-link submission receipt without creating another task.", zh_Hans: "查询 OAuth 上传或分享链接操作回执，不重复创建任务。", ja_JP: "新しいタスクを作成せずに、OAuthアップロードまたは共有リンク送信の受付結果を確認します。", pt_BR: "Consulte o comprovante de envio OAuth de um arquivo ou link compartilhado sem criar outra tarefa."}
   llm: OAuth only. Query the operationId returned by submission to recover a pending share-link result or an uncertain submission. Do not resubmit paid processing to check status. API Key users use the existing task lookup tools instead.
 parameters:
   - name: operationId
     type: string
     required: true
-    label: {en_US: Operation ID, zh_Hans: 操作编号}
-    human_description: {en_US: The same operation ID used for submission., zh_Hans: 提交时使用的同一个操作编号。}
+    label: {en_US: "Operation ID", zh_Hans: "操作编号", ja_JP: "操作ID", pt_BR: "ID da operação"}
+    human_description: {en_US: "The same operation ID used for submission.", zh_Hans: "提交时使用的同一个操作编号。", ja_JP: "送信時に使用した操作ID。", pt_BR: "O mesmo ID de operação usado no envio."}
     llm_description: Existing OAuth operation identifier, 8–64 safe characters.
     form: llm
 extra:

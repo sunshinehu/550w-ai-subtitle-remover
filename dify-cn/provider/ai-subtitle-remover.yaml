@@ -3,14 +3,14 @@ identity:
   name: "ai-subtitle-remover-cn"
   label:
     en_US: "550W AI去字幕去水印"
+    ja_JP: "550W 文字・透かし除去"
+    pt_BR: "550W Removedor de texto e marcas d’água"
     zh_Hans: "550W AI去字幕去水印"
-    pt_BR: "Ferramentas de mídia 550W AI"
-    ja_JP: "550W AI メディアツール"
   description:
     en_US: "Upload images or videos for watermark and subtitle removal, or resolve supported video share links."
+    ja_JP: "画像や動画の文字・透かしを除去し、対応する動画共有リンクから動画URLを取得します。"
+    pt_BR: "Remova marcas d’água e legendas de imagens ou vídeos, ou obtenha o vídeo de links de compartilhamento compatíveis."
     zh_Hans: "上传图片或视频去除水印、字幕，也可处理受支持的视频分享链接。"
-    pt_BR: "Remova marcas d'água de imagens, legendas ou marcas d'água de vídeos e processe links compartilhados."
-    ja_JP: "画像の透かし、動画の字幕や透かし、共有リンクのプラットフォーム透かしを除去します。"
   icon: "icon.png"
 
 # Native OAuth and API Key provider.
@@ -20,9 +20,13 @@ credentials_for_provider:
     required: true
     label:
       en_US: User number
+      ja_JP: "ユーザーID"
+      pt_BR: "ID do usuário"
       zh_Hans: 用户编号
     help:
       en_US: Find your user number at https://qzm.550wai.cn/api-keys
+      ja_JP: "ユーザーIDの確認：https://qzm.550wai.cn/api-keys"
+      pt_BR: "Consulte seu ID de usuário em https://qzm.550wai.cn/api-keys"
       zh_Hans: 请在 https://qzm.550wai.cn/api-keys 查看国内版用户编号
     url: https://qzm.550wai.cn/api-keys
   apiKey:
@@ -30,9 +34,13 @@ credentials_for_provider:
     required: true
     label:
       en_US: API key
+      ja_JP: "APIキー"
+      pt_BR: "Chave de API"
       zh_Hans: API 密钥
     help:
       en_US: Create an API key at https://qzm.550wai.cn/api-keys
+      ja_JP: "APIキーの作成：https://qzm.550wai.cn/api-keys"
+      pt_BR: "Crie uma chave de API em https://qzm.550wai.cn/api-keys"
       zh_Hans: 请在 https://qzm.550wai.cn/api-keys 创建国内版 API 密钥
     url: https://qzm.550wai.cn/api-keys
 
@@ -42,25 +50,28 @@ oauth_schema:
     - name: oauth_state_secret
       type: secret-input
       required: true
-      label: {en_US: OAuth state encryption secret, zh_Hans: OAuth 授权状态加密密钥}
+      label: {en_US: "OAuth state encryption secret", zh_Hans: "OAuth 授权状态加密密钥", ja_JP: "OAuth状態暗号化キー", pt_BR: "Segredo de criptografia do estado OAuth"}
       help:
         en_US: Administrator setup only. Use a unique random secret of at least 32 characters per Dify installation. Keep it stable across workers. Public clients register automatically with S256 PKCE; no shared 550W client secret is needed.
+        ja_JP: "管理者向け設定です。Difyの各インスタンスに32文字以上の固有のランダムキーを設定し、全ワーカーで同じ値を維持してください。公開クライアントはS256 PKCEで自動登録されるため、550Wの共有クライアントシークレットは不要です。"
+        pt_BR: "Configuração exclusiva do administrador. Use um segredo aleatório exclusivo de pelo menos 32 caracteres por instalação do Dify e mantenha o mesmo valor em todos os workers. Clientes públicos são registrados automaticamente com S256 PKCE; não é necessário um segredo de cliente compartilhado da 550W."
         zh_Hans: 管理员一次性配置，每个 Dify 实例使用独立的至少32字符随机密钥，多节点保持一致。使用 S256 PKCE 自动注册客户端，无需共享550W客户端密钥。
       url: https://qzm.550wai.cn/agent/
   credentials_schema:
     - name: access_token
       type: secret-input
-      label: {en_US: Access token, zh_Hans: 访问令牌}
+      label: {en_US: "Access token", zh_Hans: "访问令牌", ja_JP: "アクセストークン", pt_BR: "Token de acesso"}
     - name: refresh_token
       type: secret-input
-      label: {en_US: Refresh token, zh_Hans: 刷新令牌}
+      label: {en_US: "Refresh token", zh_Hans: "刷新令牌", ja_JP: "リフレッシュトークン", pt_BR: "Token de atualização"}
     - name: client_id
       type: text-input
-      label: {en_US: Registered client ID, zh_Hans: 注册客户端编号}
+      label: {en_US: "Registered client ID", zh_Hans: "注册客户端编号", ja_JP: "登録済みクライアントID", pt_BR: "ID do cliente registrado"}
     - name: region
       type: text-input
-      label: {en_US: Account region, zh_Hans: 账户区域}
+      label: {en_US: "Account region", zh_Hans: "账户区域", ja_JP: "アカウントの地域", pt_BR: "Região da conta"}
 tools:
+  - tools/estimate-media-cost.yaml
   - tools/query-credits.yaml
   - tools/remove-image-watermark.yaml
   - tools/image-task-detail.yaml
