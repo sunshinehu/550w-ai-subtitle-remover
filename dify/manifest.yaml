@@ -1,5 +1,6 @@
 version: 3.2.0
 type: plugin
+tags: [image, videos, design]
 author: sunshinehu
 name: ai-subtitle-remover
 repo: https://github.com/sunshinehu/550w-ai-subtitle-remover
