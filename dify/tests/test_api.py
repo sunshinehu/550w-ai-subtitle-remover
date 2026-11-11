@@ -41,8 +41,7 @@ class ApiTests(unittest.TestCase):
             response.status_code = 400
             response.headers = {"Content-Type": "application/json"}
             response.iter_content.return_value = [json.dumps({"code":400,"errorCode":"SHARE_URL_UNSUPPORTED"}).encode()]
-            with patch("tools.api.REGION", region):
-                result = _read_json_response(response)
+            result = _read_json_response(response, region=region)
             self.assertIn(expected, result["message"])
             self.assertEqual(result["nextAction"], "PROVIDE_SUPPORTED_SHARE_LINK")
             self.assertFalse(result["automaticRetryAllowed"])

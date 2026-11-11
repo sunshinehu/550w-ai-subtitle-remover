@@ -5,18 +5,16 @@ from dify_plugin.errors.tool import ToolProviderCredentialValidationError
 from dify_plugin.errors.tool import ToolProviderOAuthError
 from dify_plugin.entities.oauth import ToolOAuthCredentials
 from tools import oauth
-from tools.region import API_KEY_URL
+from tools.region import api_key_url
 
 from tools.api import call_api
 
 
 class AiSubtitleRemoverProvider(ToolProvider):
     def _validate_credentials(self, credentials: dict[str, Any]) -> None:
-        if not credentials.get("userNo") or not credentials.get("apiKey"):
-            raise ToolProviderCredentialValidationError(
-                f"User number and API key are required. Get them at {API_KEY_URL}"
-            )
         try:
+            if not credentials.get("userNo") or not credentials.get("apiKey"):
+                raise ValueError(f"User number and API key are required. Get them at {api_key_url(credentials)}")
             result = call_api(credentials, "/open/queryCredits", {}, timeout=15)
             if result.get("code") != 200:
                 raise ValueError(result.get("message") or "Credential validation failed")

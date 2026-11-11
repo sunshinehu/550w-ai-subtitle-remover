@@ -6,13 +6,20 @@ Source: https://github.com/sunshinehu/550w-ai-subtitle-remover · Support: suppo
 
 ## Configure
 
-Get your user number and API key from the [global API page](https://eraser.550wai.com/api/), then enter both in the Dify tool provider settings. The API key is a secret field.
+Select **Account region** in the provider credentials, then enter your own user number and API key. The API key is a secret field. Region is independent of the Dify interface language.
+
+| Account region | API key management | Purchase credits |
+|---|---|---|
+| China (`cn`) | https://qzm.550wai.cn/api-keys | https://qzm.550wai.cn/purchase?tab=speed |
+| Global (`global`) | https://eraser.550wai.com/api/ | https://eraser.550wai.com/purchase/ |
+
+Both use the existing shared 550W backend. No new endpoint, credentials, permission or purchase is required to upgrade an existing Global connection. Legacy API Key connections without a region retain Global behavior.
 
 This provider supports OAuth and API Key authentication in the same plugin. Existing user-number/API-key credentials remain valid. Account and purchase links stay regional regardless of the Dify interface language.
 
 ### OAuth setup
 
-Administrators configure one unique random `oauth_state_secret` of at least 32 characters in Dify's OAuth Client settings; use the same value across workers of that installation and never publish it. It encrypts short-lived PKCE state, is not a 550W API key or client secret, and is never returned as a user credential. Public OAuth clients are dynamically registered against the existing 550W OAuth service. Dify's actual HTTPS callback is used unchanged; no guessed or shared callback URL is needed. Users then select OAuth and authorize their own account on the corresponding regional consent page. Dify stores tokens and invokes token refresh automatically. Reconnect after revocation or an expired refresh token; do not fall back silently to another account's API Key.
+Administrators configure one unique random `oauth_state_secret` of at least 32 characters in Dify's OAuth Client settings; use the same value across workers of that installation and never publish it. It encrypts short-lived PKCE state, is not a 550W API key or client secret, and is never returned as a user credential. Public OAuth clients are dynamically registered against the existing 550W OAuth service. Dify's actual HTTPS callback is used unchanged; no guessed or shared callback URL is needed. Administrators select **Account region** in the OAuth Client settings before starting a new authorization. Users then select OAuth and authorize their own account on the corresponding regional consent page. Dify exposes this choice in administrator client settings, not as a user-specific region picker. To create a connection for the other region, the administrator changes this setting before starting that authorization, keeping the state encryption secret unchanged. The encrypted authorization state captures the selected region; subsequent settings changes cannot switch an in-flight authorization, a saved connection, token refresh or task lookup to the other region. Saved CN and Global credentials are routed independently; actual multi-credential selection depends on the Dify host. Do not change a saved token's region by editing its text. Dify stores tokens and invokes token refresh automatically. Reconnect after revocation or an expired refresh token; do not fall back silently to another account's API Key.
 
 OAuth operations use the shared 550W OAuth + HTTP media API with S256 PKCE, not Bearer authentication against legacy `/open` endpoints. Dify's own browser/session callback-context checks remain required; encrypted state supplements them rather than replacing them. Older or customized Dify versions must retain these checks. The plugin does not promise Cloud-wide preconfigured OAuth: each workspace administrator may need to configure the OAuth Client settings until Dify offers a system client configuration.
 
@@ -38,6 +45,14 @@ OAuth submission transport failures return `code=-201`, `status=unknown`, the or
 Use **Check OAuth operation** on the same regional account; do not generate a new ID,
 automatically retry, or treat a not-found response as permission to submit again.
 API Key workflows retain their existing task lookup behavior.
+
+## Consolidation and migration from the China listing
+
+Version 3.2.0 consolidates regional support under the existing `sunshinehu/ai-subtitle-remover` identity. Native translated labels follow Dify's UI language; account region never follows language. The nine existing tool identifiers and parameters remain unchanged for existing Global workflows.
+
+The old `sunshinehu/ai-subtitle-remover-cn` listing has a different provider identity and will not be silently replaced. Keep its existing workflows until you explicitly install the consolidated plugin, create a China connection, replace those workflow nodes, and verify read-only balance/task lookup on the same account. OAuth is reconnected through Dify; do not copy tokens between provider identities. Keep original operation/task IDs when recovering work. No paid submission or automatic account fallback is required for migration. Listing deprecation is coordinated with the Marketplace maintainers after review; this package does not delete the old listing.
+
+China share-link support includes Douyin, Kuaishou, Bilibili and Weibo; Global includes TikTok and X. Actual availability and costs are determined by the service response. This release does not claim newly completed Dify Cloud/CE OAuth or paid-media host acceptance; schema and offline verification are documented separately for review.
 
 ## Account and credits
 

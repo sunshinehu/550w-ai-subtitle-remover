@@ -14,12 +14,13 @@ from urllib.parse import urlencode, urlparse
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from tools.api import BASE_URL
-from tools.region import REGION
+from tools.region import REGION, VERSION, account_region
 import requests
 
 SCOPE = "credits:read tasks:read tasks:submit media:upload"
 RESOURCE = f"{BASE_URL}/media-api/{REGION}"
-AAD = ("550w-dify-oauth-state-v1:" + REGION).encode()
+AAD = b"550w-dify-oauth-state-v2"
+LEGACY_AAD = b"550w-dify-oauth-state-v1:global"
 
 
 def _key(settings):
@@ -40,6 +41,7 @@ def _post(path, payload):
     try:
         with requests.post(BASE_URL + path, json=payload if path.endswith("register") else None,
                            data=None if path.endswith("register") else payload,
+                           headers={"X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION},
                            timeout=(10, 30), allow_redirects=False, stream=True) as response:
             if response.status_code != 200 and not (path.endswith("register") and response.status_code == 201):
                 raise ValueError("550W OAuth request rejected; check client configuration or reconnect")
@@ -63,12 +65,14 @@ def _post(path, payload):
 
 
 def authorization_url(redirect_uri, settings):
+    region = account_region(settings)
+    resource = f"{BASE_URL}/media-api/{region}"
     callback = _callback(redirect_uri)
     key = _key(settings)
     registration = _post("/oauth2/register", {
-        "client_name": f"550W Dify {REGION}", "redirect_uris": [callback],
+        "client_name": f"550W Dify {region}", "redirect_uris": [callback],
         "token_endpoint_auth_method": "none", "grant_types": ["authorization_code", "refresh_token"],
-        "response_types": ["code"], "scope": SCOPE, "resource": RESOURCE,
+        "response_types": ["code"], "scope": SCOPE, "resource": resource,
     })
     client_id = registration.get("client_id")
     if not isinstance(client_id, str) or not 1 <= len(client_id) <= 128:
@@ -77,14 +81,14 @@ def authorization_url(redirect_uri, settings):
     nonce = secrets.token_bytes(12)
     callback_hash = base64.urlsafe_b64encode(hashlib.sha256(callback.encode()).digest()).decode().rstrip("=")
     payload = json.dumps({"t": int(time.time()), "v": verifier, "c": client_id,
-                          "h": callback_hash}, separators=(",", ":")).encode()
+                          "h": callback_hash, "r": region}, separators=(",", ":")).encode()
     state = base64.urlsafe_b64encode(nonce + AESGCM(key).encrypt(nonce, payload, AAD)).decode().rstrip("=")
     if len(state) > 500:
         raise ValueError("Registered OAuth client ID exceeds the service state size limit")
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
     return BASE_URL + "/oauth2/authorize?" + urlencode({
         "client_id": client_id, "redirect_uri": callback, "response_type": "code", "scope": SCOPE,
-        "resource": RESOURCE, "state": state, "code_challenge": challenge, "code_challenge_method": "S256",
+        "resource": resource, "state": state, "code_challenge": challenge, "code_challenge_method": "S256",
     })
 
 
@@ -96,7 +100,14 @@ def exchange(redirect_uri, settings, request):
         raise ValueError("OAuth callback is missing valid state or code")
     try:
         raw = base64.urlsafe_b64decode(state + "=" * (-len(state) % 4))
-        payload = json.loads(AESGCM(_key(settings)).decrypt(raw[:12], raw[12:], AAD))
+        try:
+            payload = json.loads(AESGCM(_key(settings)).decrypt(raw[:12], raw[12:], AAD))
+            region = account_region({"region": payload["r"]}, required=True)
+        except Exception:
+            # Only the surviving global identity can have in-flight v1 states.
+            payload = json.loads(AESGCM(_key(settings)).decrypt(raw[:12], raw[12:], LEGACY_AAD))
+            region = account_region({"region": "global"}, required=True)
+        resource = f"{BASE_URL}/media-api/{region}"
         age = int(time.time()) - payload["t"]
         callback_hash = base64.urlsafe_b64encode(hashlib.sha256(_callback(redirect_uri).encode()).digest()).decode().rstrip("=")
         if not 0 <= age <= 600 or payload["h"] != callback_hash:
@@ -104,24 +115,28 @@ def exchange(redirect_uri, settings, request):
     except Exception as exc:
         raise ValueError("OAuth state is invalid or expired; restart authorization") from exc
     result = _post("/oauth2/token", {"grant_type": "authorization_code", "client_id": payload["c"],
-        "redirect_uri": redirect_uri, "code": code, "code_verifier": payload["v"], "resource": RESOURCE})
-    return _credentials(result, payload["c"])
+        "redirect_uri": redirect_uri, "code": code, "code_verifier": payload["v"], "resource": resource})
+    return _credentials(result, payload["c"], region=region)
 
 
 def refresh(credentials):
-    if credentials.get("region") != REGION or not credentials.get("refresh_token") or not credentials.get("client_id"):
+    region = account_region(credentials, required=True)
+    resource = f"{BASE_URL}/media-api/{region}"
+    if not credentials.get("refresh_token") or not credentials.get("client_id"):
         raise ValueError("OAuth connection cannot be refreshed; reconnect this regional provider")
     result = _post("/oauth2/token", {"grant_type": "refresh_token", "client_id": credentials["client_id"],
-        "refresh_token": credentials["refresh_token"], "resource": RESOURCE})
-    return _credentials(result, credentials["client_id"], credentials.get("refresh_token"))
+        "refresh_token": credentials["refresh_token"], "resource": resource})
+    return _credentials(result, credentials["client_id"], credentials.get("refresh_token"), region=region)
 
 
-def _credentials(result, client_id, previous_refresh=None):
+def _credentials(result, client_id, previous_refresh=None, *, region=REGION):
+    region = account_region({"region": region}, required=True)
+    resource = f"{BASE_URL}/media-api/{region}"
     # Optional extension fields remain optional for legacy responses, but must
     # never override the explicitly selected regional Bearer connection.
     if ("token_type" in result and (not isinstance(result["token_type"], str)
             or result["token_type"].lower() != "bearer")) or \
-            ("resource" in result and result["resource"] != RESOURCE):
+            ("resource" in result and result["resource"] != resource):
         raise ValueError("OAuth token type or resource does not match this connection")
     access = result.get("access_token")
     refresh_token = result.get("refresh_token") or previous_refresh
@@ -130,4 +145,4 @@ def _credentials(result, client_id, previous_refresh=None):
             isinstance(expires, bool) or not isinstance(expires, (int, float)) or not 0 < expires <= 86400:
         raise ValueError("OAuth response lacks valid access/refresh tokens or expiry")
     return {"access_token": access, "refresh_token": refresh_token, "client_id": client_id,
-            "region": REGION}, int(time.time() + expires)
+            "region": region}, int(time.time() + expires)

@@ -13,8 +13,22 @@ identity:
     zh_Hans: "上传图片或视频去除水印、字幕，也可处理受支持的视频分享链接。"
   icon: "icon.png"
 
-# Native OAuth and API Key provider.
 credentials_for_provider:
+  region:
+    type: select
+    required: false
+    default: global
+    label: {en_US: "Account region", zh_Hans: "账户地区", ja_JP: "アカウントの地域", pt_BR: "Região da conta"}
+    help:
+      en_US: "Choose China or Global for this connection, independently of UI language. China API keys: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/ . Existing connections retain their region."
+      zh_Hans: "按账户选择国内或海外，与界面语言无关。国内密钥：https://qzm.550wai.cn/api-keys；海外：https://eraser.550wai.com/api/。已有连接地区保持不变。"
+      ja_JP: "表示言語と独立して接続先を選択。中国：https://qzm.550wai.cn/api-keys ; グローバル：https://eraser.550wai.com/api/ 。既存接続の地域は変わりません。"
+      pt_BR: "Escolha China ou Global independentemente do idioma. Chaves China: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/ . Conexões existentes mantêm a região."
+    options:
+      - value: global
+        label: {en_US: "Global", zh_Hans: "海外", ja_JP: "グローバル", pt_BR: "Global"}
+      - value: cn
+        label: {en_US: "China", zh_Hans: "国内", ja_JP: "中国", pt_BR: "China"}
   userNo:
     type: text-input
     required: true
@@ -24,10 +38,10 @@ credentials_for_provider:
       pt_BR: "ID do usuário"
       zh_Hans: 用户编号
     help:
-      en_US: Find your user number at https://eraser.550wai.com/api/
-      ja_JP: "ユーザーIDの確認：https://eraser.550wai.com/api/"
-      pt_BR: "Consulte seu ID de usuário em https://eraser.550wai.com/api/"
-      zh_Hans: 请在 https://eraser.550wai.com/api/ 查看全球版用户编号
+      en_US: "China: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/"
+      ja_JP: "中国：https://qzm.550wai.cn/api-keys ; グローバル：https://eraser.550wai.com/api/"
+      pt_BR: "China: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/"
+      zh_Hans: 国内：https://qzm.550wai.cn/api-keys；海外：https://eraser.550wai.com/api/，查看所选地区账户的用户编号
     url: https://eraser.550wai.com/api/
   apiKey:
     type: secret-input
@@ -38,15 +52,30 @@ credentials_for_provider:
       pt_BR: "Chave de API"
       zh_Hans: API 密钥
     help:
-      en_US: Create an API key at https://eraser.550wai.com/api/
-      ja_JP: "APIキーの作成：https://eraser.550wai.com/api/"
-      pt_BR: "Crie uma chave de API em https://eraser.550wai.com/api/"
-      zh_Hans: 请在 https://eraser.550wai.com/api/ 创建全球版 API 密钥
+      en_US: "China: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/"
+      ja_JP: "中国：https://qzm.550wai.cn/api-keys ; グローバル：https://eraser.550wai.com/api/"
+      pt_BR: "China: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/"
+      zh_Hans: 国内：https://qzm.550wai.cn/api-keys；海外：https://eraser.550wai.com/api/，创建所选地区账户的密钥
     url: https://eraser.550wai.com/api/
 
 
 oauth_schema:
   client_schema:
+    - name: region
+      type: select
+      required: false
+      default: global
+      label: {en_US: "Account region", zh_Hans: "账户地区", ja_JP: "アカウントの地域", pt_BR: "Região da conta"}
+      help:
+        en_US: "Choose China or Global for this connection, independently of UI language. China API keys: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/ . Existing connections retain their region."
+        zh_Hans: "按账户选择国内或海外，与界面语言无关。国内密钥：https://qzm.550wai.cn/api-keys；海外：https://eraser.550wai.com/api/。已有连接地区保持不变。"
+        ja_JP: "表示言語と独立して接続先を選択。中国：https://qzm.550wai.cn/api-keys ; グローバル：https://eraser.550wai.com/api/ 。既存接続の地域は変わりません。"
+        pt_BR: "Escolha China ou Global independentemente do idioma. Chaves China: https://qzm.550wai.cn/api-keys ; Global: https://eraser.550wai.com/api/ . Conexões existentes mantêm a região."
+      options:
+        - value: global
+          label: {en_US: "Global", zh_Hans: "海外", ja_JP: "グローバル", pt_BR: "Global"}
+        - value: cn
+          label: {en_US: "China", zh_Hans: "国内", ja_JP: "中国", pt_BR: "China"}
     - name: oauth_state_secret
       type: secret-input
       required: true

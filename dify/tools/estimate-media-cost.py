@@ -1,6 +1,6 @@
 from dify_plugin import Tool
 from tools.api import http_json, oauth_target
-from tools.region import REGION
+from tools.region import account_region, api_key_url
 
 
 class EstimateMediaCostTool(Tool):
@@ -11,7 +11,7 @@ class EstimateMediaCostTool(Tool):
                     "code": 422, "status": "unsupported_auth_mode",
                     "nextAction": "CHECK_REGIONAL_API_PRICING",
                     "automaticRetryAllowed": False,
-                    "fallbackUrl": "https://eraser.550wai.com/api/" if REGION == "global" else "https://qzm.550wai.cn/api/",
+                    "fallbackUrl": api_key_url(self.runtime.credentials),
                     "message": "This quote tool requires OAuth. Check regional API pricing for API Key workflows; no quote was produced and no processing was submitted. Do not switch accounts automatically.",
                 })
                 return
@@ -29,6 +29,6 @@ class EstimateMediaCostTool(Tool):
                 if key == "durationSeconds" and value > 600:
                     raise ValueError("Video duration must not exceed 600 seconds")
                 params[key] = int(value)
-            yield self.create_json_message(http_json("post", root + "/quote", headers=headers, json=params))
+            yield self.create_json_message(http_json("post", root + "/quote", headers=headers, json=params, region=account_region(self.runtime.credentials, required=True)))
         except ValueError as exc:
             yield self.create_json_message({"code": -200, "message": str(exc), "automaticRetryAllowed": False})

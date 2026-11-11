@@ -6,7 +6,7 @@ import sys
 import unittest
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from tools import oauth
@@ -18,6 +18,18 @@ CREDENTIALS = {"access_token": "limited-test-token", "region": "global"}
 
 
 class OAuthTests(unittest.TestCase):
+    def test_oauth_request_declares_product_without_extra_requests(self):
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.status_code = 200
+        response.headers = {"Content-Type": "application/json"}
+        response.iter_content.return_value = [b'{"access_token":"fixture"}']
+        with patch.object(oauth.requests, "post", return_value=response) as post:
+            oauth._post("/oauth2/token", {"grant_type":"refresh_token"})
+            self.assertEqual(post.call_count, 1)
+            self.assertEqual(post.call_args.kwargs["headers"]["X-550W-Product"], "plugin-dify")
+            self.assertFalse(post.call_args.kwargs["allow_redirects"])
+
     def test_token_response_region_and_type_are_validated(self):
         valid = {"access_token": "access", "refresh_token": "refresh", "expires_in": 900}
         oauth._credentials(valid, "client")
@@ -78,7 +90,7 @@ class OAuthTests(unittest.TestCase):
     def test_oauth_account_never_uses_legacy_credentials(self, http):
         call_api({**CREDENTIALS, "apiKey": "legacy", "userNo": "legacy"}, "/open/queryCredits", {})
         self.assertEqual(http.call_args.args, ("get", "https://www.550wai.cn/media-api/global/v1/account"))
-        self.assertEqual(http.call_args.kwargs["headers"], {"Authorization": "Bearer limited-test-token", "X-550W-Product": "plugin-dify"})
+        self.assertEqual(http.call_args.kwargs["headers"], {"Authorization": "Bearer limited-test-token", "X-550W-Product": "plugin-dify", "X-550W-Product-Version": "3.2.0"})
         self.assertNotIn("data", http.call_args.kwargs)
 
     @patch("tools.api.http_json", return_value={"code": 200, "status": "accepted"})
@@ -89,7 +101,7 @@ class OAuthTests(unittest.TestCase):
 
     def test_cross_region_token_is_not_silently_fallen_back(self):
         with patch("tools.api.requests.post") as post, self.assertRaises(ValueError):
-            call_api({"access_token": "token", "region": "cn", "apiKey": "key", "userNo": "user"}, "/open/queryCredits", {})
+            call_api({"access_token": "token", "region": "invalid", "apiKey": "key", "userNo": "user"}, "/open/queryCredits", {})
         post.assert_not_called()
 
     @patch("tools.api.requests.post")

@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from tools.region import REGION, API_KEY_URL
+from tools.region import REGION, VERSION, account_region, api_key_url
 
 BASE_URL = "https://www.550wai.cn"
 ALLOWED_ENDPOINTS = frozenset({
@@ -40,16 +40,17 @@ def require_token(value: Any, label: str) -> str:
 
 
 def call_api(credentials: dict[str, Any], endpoint: str, params: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
+    region = account_region(credentials, required="access_token" in credentials)
     if endpoint not in ALLOWED_ENDPOINTS:
         raise ValueError("Unsupported API endpoint")
     if "access_token" in credentials:
         root, headers = oauth_target(credentials)
         if endpoint == "/open/queryCredits":
-            return http_json("get", root + "/account", headers=headers, timeout=timeout)
+            return http_json("get", root + "/account", headers=headers, timeout=timeout, region=region)
         if endpoint in ("/open/taskDetail", "/open/imageWatermarkTaskDetail"):
             task = require_token(params.get("taskId"), "taskId")
             kind = "image" if endpoint == "/open/imageWatermarkTaskDetail" else "video"
-            return http_json("get", root + f"/tasks/{kind}/{task}", headers=headers, timeout=timeout)
+            return http_json("get", root + f"/tasks/{kind}/{task}", headers=headers, timeout=timeout, region=region)
         operation = params.get("operationId") or params.get("idempotencyKey") or uuid.uuid4().hex
         require_token(operation, "operationId")
         if len(operation) > 64:
@@ -57,19 +58,19 @@ def call_api(credentials: dict[str, Any], endpoint: str, params: dict[str, Any],
         return http_json("post", root + "/media", headers=headers, json={
             "operationId": operation, "mediaType": "share" if endpoint == "/open/removeVideoWatermark" else "video",
             "sourceUrl": require_url(params.get("videoUrl")),
-        }, timeout=timeout, operation_id=operation)
+        }, timeout=timeout, operation_id=operation, region=region)
     user_no = credentials.get("userNo")
     api_key = credentials.get("apiKey")
     if not user_no or not api_key:
-        raise ValueError(f"Connect with OAuth or configure your user number and API key at {API_KEY_URL}")
+        raise ValueError(f"Connect with OAuth or configure your user number and API key at {api_key_url(credentials)}")
     try:
         response = requests.post(
             BASE_URL + endpoint,
             data={"userNo": user_no, "apiKey": api_key, **params},
-            headers={"X-550W-Product": "plugin-dify"},
+            headers={"X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION},
             timeout=(10, timeout), allow_redirects=False, stream=True,
         )
-        return _read_json_response(response)
+        return _read_json_response(response, region=region)
     except requests.RequestException as exc:
         raise ValueError("550W API request failed; check connectivity and task state before retrying a paid action") from exc
 
@@ -77,6 +78,7 @@ def call_api(credentials: dict[str, Any], endpoint: str, params: dict[str, Any],
 def call_upload(credentials: dict[str, Any], endpoint: str, uploaded: Any,
                 params: dict[str, Any] | None = None, timeout: int = 120) -> dict[str, Any]:
     """Upload a Dify-selected file only to the fixed 550W Open API host."""
+    region = account_region(credentials, required="access_token" in credentials)
     if endpoint not in UPLOAD_ENDPOINTS:
         raise ValueError("Unsupported upload endpoint")
     user_no, api_key = credentials.get("userNo"), credentials.get("apiKey")
@@ -84,7 +86,7 @@ def call_upload(credentials: dict[str, Any], endpoint: str, uploaded: Any,
     if oauth:
         root, headers = oauth_target(credentials)
     elif not user_no or not api_key:
-        raise ValueError(f"Connect with OAuth or configure your user number and API key at {API_KEY_URL}")
+        raise ValueError(f"Connect with OAuth or configure your user number and API key at {api_key_url(credentials)}")
     filename = os.path.basename(str(getattr(uploaded, "filename", "")))
     image = endpoint == "/open/removeImageWatermark"
     allowed = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"} if image else {".mp4": "video/mp4", ".mov": "video/quicktime"}
@@ -141,18 +143,18 @@ def call_upload(credentials: dict[str, Any], endpoint: str, uploaded: Any,
                 headers = {}
             form = MultipartEncoder(fields={**fields, "file": (filename, staged, mime)})
             response = requests.post(root + "/media" if oauth else BASE_URL + endpoint,
-                data=form, headers={**headers, "X-550W-Product": "plugin-dify", "Content-Type": form.content_type}, timeout=(10, timeout),
+                data=form, headers={**headers, "X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION, "Content-Type": form.content_type}, timeout=(10, timeout),
                 allow_redirects=False, stream=True)
-            return _read_json_response(response)
+            return _read_json_response(response, region=region)
     except requests.RequestException as exc:
         if oauth and operation is not None:
-            return uncertain_operation(operation)
+            return uncertain_operation(operation, region=region)
         raise ValueError("550W upload failed; check the existing task before retrying") from exc
     except OSError as exc:
         raise ValueError("Temporary storage is unavailable or full; retry on a host with enough free disk space") from exc
 
 
-def _read_json_response(response: requests.Response) -> dict[str, Any]:
+def _read_json_response(response: requests.Response, *, region=REGION) -> dict[str, Any]:
     with response:
         if 300 <= response.status_code < 400:
             raise ValueError("API redirects are not allowed")
@@ -191,7 +193,7 @@ def _read_json_response(response: requests.Response) -> dict[str, Any]:
     if business_error:
         result["automaticRetryAllowed"] = False
         if result.get("errorCode") == "SHARE_URL_UNSUPPORTED" and not result.get("message"):
-            supported = "Douyin, Kuaishou, Bilibili or Weibo" if REGION == "cn" else "TikTok, X or Twitter"
+            supported = "Douyin, Kuaishou, Bilibili or Weibo" if region == "cn" else "TikTok, X or Twitter"
             result["message"] = (f"This regional connection supports public share links from {supported}. "
                                  "Use a supported link; do not switch accounts or retry this link automatically.")
             result["nextAction"] = "PROVIDE_SUPPORTED_SHARE_LINK"
@@ -199,20 +201,21 @@ def _read_json_response(response: requests.Response) -> dict[str, Any]:
 
 
 def oauth_target(credentials):
+    region = account_region(credentials, required=True)
     token = credentials.get("access_token")
-    if credentials.get("region") != REGION or not isinstance(token, str) or not token or "\r" in token or "\n" in token:
+    if not isinstance(token, str) or not token or "\r" in token or "\n" in token:
         raise ValueError("Reconnect OAuth to this regional provider")
-    return f"{BASE_URL}/media-api/{REGION}/v1", {"Authorization": "Bearer " + token, "X-550W-Product": "plugin-dify"}
+    return f"{BASE_URL}/media-api/{region}/v1", {"Authorization": "Bearer " + token, "X-550W-Product": "plugin-dify", "X-550W-Product-Version": VERSION}
 
 
-def uncertain_operation(operation_id: str) -> dict[str, Any]:
+def uncertain_operation(operation_id: str, *, region=REGION) -> dict[str, Any]:
     """Local transport outcome, never a claim that the service accepted a task."""
     return {
         "code": -201,
         "status": "unknown",
         "errorCode": "SUBMISSION_OUTCOME_UNKNOWN",
         "operationId": operation_id,
-        "region": REGION,
+        "region": region,
         "nextAction": "CHECK_ORIGINAL_OPERATION",
         "automaticRetryAllowed": False,
         "message": (
@@ -224,11 +227,11 @@ def uncertain_operation(operation_id: str) -> dict[str, Any]:
     }
 
 
-def http_json(method, url, *, timeout=30, operation_id=None, **kwargs):
+def http_json(method, url, *, timeout=30, operation_id=None, region=REGION, **kwargs):
     try:
         response = getattr(requests, method)(url, timeout=(10, timeout), allow_redirects=False, stream=True, **kwargs)
-        return _read_json_response(response)
+        return _read_json_response(response, region=region)
     except requests.RequestException as exc:
         if operation_id is not None:
-            return uncertain_operation(operation_id)
+            return uncertain_operation(operation_id, region=region)
         raise ValueError("550W HTTP request failed; reconnect if authorization expired, and check the existing operation before retrying") from exc
