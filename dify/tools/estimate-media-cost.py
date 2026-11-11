@@ -1,6 +1,6 @@
 from dify_plugin import Tool
 from tools.api import http_json, oauth_target
-from tools.region import account_region, api_key_url
+from tools.region import account_region, api_pricing_url
 
 
 class EstimateMediaCostTool(Tool):
@@ -11,7 +11,7 @@ class EstimateMediaCostTool(Tool):
                     "code": 422, "status": "unsupported_auth_mode",
                     "nextAction": "CHECK_REGIONAL_API_PRICING",
                     "automaticRetryAllowed": False,
-                    "fallbackUrl": api_key_url(self.runtime.credentials),
+                    "fallbackUrl": api_pricing_url(self.runtime.credentials),
                     "message": "This quote tool requires OAuth. Check regional API pricing for API Key workflows; no quote was produced and no processing was submitted. Do not switch accounts automatically.",
                 })
                 return

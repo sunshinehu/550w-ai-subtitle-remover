@@ -15,3 +15,8 @@ def account_region(credentials, *, required=False):
 def api_key_url(credentials):
     return ("https://qzm.550wai.cn/api-keys" if account_region(credentials) == "cn"
             else "https://eraser.550wai.com/api/")
+
+
+def api_pricing_url(credentials):
+    return ("https://qzm.550wai.cn/api-open" if account_region(credentials) == "cn"
+            else "https://eraser.550wai.com/api/")

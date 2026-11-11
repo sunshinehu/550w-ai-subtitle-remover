@@ -129,3 +129,17 @@ class RegionTests(unittest.TestCase):
                 call_api(credentials, '/open/queryCredits', {})
             self.assertEqual(post.call_args.args[0], 'https://www.550wai.cn/open/queryCredits')
             self.assertEqual(set(post.call_args.kwargs['data']), {'userNo', 'apiKey'})
+
+    def test_cn_key_quote_points_to_api_documentation_not_key_editor(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('regional_quote', ROOT / 'tools/estimate-media-cost.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        tool = object.__new__(module.EstimateMediaCostTool)
+        tool.runtime = SimpleNamespace(credentials={'region': 'cn', 'userNo': 'fixture', 'apiKey': 'fixture'})
+        tool.create_json_message = lambda x: x
+        with patch.object(module, 'http_json') as http:
+            result = list(tool._invoke({'mediaType': 'image'}))[0]
+        self.assertEqual(result['fallbackUrl'], 'https://qzm.550wai.cn/api-open')
+        self.assertEqual(result['status'], 'unsupported_auth_mode')
+        http.assert_not_called()
